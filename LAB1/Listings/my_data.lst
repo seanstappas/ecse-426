@@ -1,0 +1,69 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000                 AREA             myData, DATA, READWRITE
+    2 00000000                 export           myString1
+    3 00000000                 export           myString2
+    4 00000000 01 02 03 
+              04 05    myString1
+                               DCB              1, 2, 3, 4, 5
+    5 00000005 AB AB AB 
+              AB AB AB 
+              AB AB AB 
+              AB AB AB 
+              AB AB AB 
+              AB AB AB 
+              AB AB AB 
+              AB AB AB 
+              AB AB AB 
+              AB AB AB 
+              AB AB AB 
+              AB AB AB 
+              AB AB AB 
+              AB AB AB 
+              AB AB AB 
+              AB AB AB 
+              AB AB    myString2
+                               FILL             50, 0xAB
+    6 00000037                 END
+Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M4.fp --apcs=int
+erwork --depend=.\objects\my_data.d -o.\objects\my_data.o -I.\RTE\_Target_1 -IC
+:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include -IC:\Keil_v5\ARM\PACK\Keil\STM
+32F4xx_DFP\2.11.0\Drivers\CMSIS\Device\ST\STM32F4xx\Include --predefine="__EVAL
+ SETA 1" --predefine="__UVISION_VERSION SETA 524" --predefine="_RTE_ SETA 1" --
+predefine="STM32F407xx SETA 1" --list=.\listings\my_data.lst my_data.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+myData 00000000
+
+Symbol: myData
+   Definitions
+      At line 1 in file my_data.s
+   Uses
+      None
+Comment: myData unused
+myString1 00000000
+
+Symbol: myString1
+   Definitions
+      At line 4 in file my_data.s
+   Uses
+      At line 2 in file my_data.s
+Comment: myString1 used once
+myString2 00000005
+
+Symbol: myString2
+   Definitions
+      At line 5 in file my_data.s
+   Uses
+      At line 3 in file my_data.s
+Comment: myString2 used once
+3 symbols
+337 symbols in table

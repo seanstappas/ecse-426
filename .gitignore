@@ -1,28 +1,8 @@
 
 *.Sean
 
-*.dbgconf
-
-*.scvd
-
-*.uvoptx
-
-*.uvprojx
-
-*.lst
-
-*.map
+*.htm
 
 *.o
 
 *.d
-
-*.crf
-
-*.dep
-
-*.axf
-
-*.htm
-
-*.lnp

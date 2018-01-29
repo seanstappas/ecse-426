@@ -16,6 +16,7 @@
 ; S4: input array length (converted to floating point)
 
 asm_math
+	MOV 		R3, #0
 	
 start_loop
 	CMP			R3, R2			; check if the end of the array is reached in the loop
@@ -55,6 +56,12 @@ store_result
 	VMOV.f32	S4, R2			; convert input array length to floating point
 	VDIV.f32	S0, S3, S4		; divide sum of squares by length of array (todo; convert R2 to floating point?)
 	VSQRT.f32	S0, S0			; take square root to obtain RMS value in S0
+	
+	VSTR.f32	S0, [R1, #0]	; store the RMS value in the output array
+	VSTR.f32	S1, [R1, #4]	; store the max value in the output array
+	VSTR.f32	S2, [R1, #8]	; store the min value in the output array
+	STR			R4, [R1, #12]	; store the max index in the output array
+	STR			R5, [R1, #16]	; store the min index in the output array
 	
 	B 			exit			; branch to exit the subroutine
 

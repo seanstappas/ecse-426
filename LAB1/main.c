@@ -6,6 +6,26 @@ extern int asm_math(float* input_array, float* output_array, int array_length);
 
 // C math function
 int C_math(float* input_array, float* output_array, int array_length) {
+
+		float average = 0;
+		int cMinIndex = 0;
+		int cMaxIndex = 0;
+		float cMax = 0;
+		float cMin = 0;
+	
+		for(int i=0; i<array_length; i++){
+				average += input_array[i];
+			if(cMin>input_array[i] || cMin == 0){
+				cMinIndex = i;
+				cMin = input_array[i];
+			}
+			if(cMax<input_array[i] || cMax == 0){
+				cMaxIndex = i;
+				cMax = input_array[i];
+			}
+		}
+		
+	
 	return 0;
 }
 

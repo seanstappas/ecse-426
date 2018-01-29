@@ -184,14 +184,14 @@ __Vectors_Size  EQU  __Vectors_End - __Vectors
 ; Reset handler
 Reset_Handler    PROC
                  EXPORT  Reset_Handler             [WEAK]
-        IMPORT  example1
+        IMPORT  asm_math
 				LDR.W R0, =0xE000ED88
 				LDR R1, [R0]
 				ORR R1, R1, #(0xF << 20)
 				STR R1, [R0]
 				DSB
 				ISB
-                LDR     R0, =example1
+                LDR     R0, =asm_math
                 BX      R0
                 ENDP
 

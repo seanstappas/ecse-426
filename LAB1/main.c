@@ -51,9 +51,11 @@ int main() {
 	
 	asm_math(input_array, output_array, array_length);
 	
-	for (int i = 0; i < 5; i++) {
-		printf("Element %i of output: %f\n", i, output_array[i]);
-	}
+	printf("RMS value: %f\n", output_array[0]);
+	printf("Max value: %f\n", output_array[1]);
+	printf("Min value: %f\n", output_array[2]);
+	printf("Max index: %f\n", output_array[3]);
+	printf("Min index: %f\n", output_array[4]);
 	
 	return 0;
 }

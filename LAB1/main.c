@@ -40,17 +40,17 @@ int CMSIS_math(float* input_array, float* output_array, int array_length) {
 	float rms;
 	arm_rms_f32(input_array, array_length, &rms);
 	//MAX & INDEX
-	float32_t* max;
+	float32_t max;
 	uint32_t maxIndex;
-	arm_max_f32(input_array, array_length, max, &maxIndex);
+	arm_max_f32(input_array, array_length, &max, &maxIndex);
 	//MIN & INDEX
-	float32_t* min;
+	float32_t min;
 	uint32_t minIndex;
-	arm_min_f32(input_array, array_length, min, &minIndex);
+	arm_min_f32(input_array, array_length, &min, &minIndex);
 	
 			output_array[0] = rms;
-			output_array[1] = *max;
-			output_array[2] = *min;
+			output_array[1] = max;
+			output_array[2] = min;
 			output_array[3] = maxIndex; 
 			output_array[4] = minIndex;
 	
@@ -86,6 +86,7 @@ int main() {
 		printf("Element %i of input: %f\n", i, input_array[i]);
 	}
 	
+	//Assembly test
 	asm_math(input_array, output_array, array_length);
 	
 	printf("RMS value: %f\n", output_array[0]);
@@ -93,6 +94,24 @@ int main() {
 	printf("Min value: %f\n", output_array[2]);
 	printf("Max index: %f\n", output_array[3]);
 	printf("Min index: %f\n", output_array[4]);
+	//CMSIS test
+	/*
+	CMSIS_math(input_array, output_array, array_length);
 	
+	printf("RMS value: %f\n", output_array[0]);
+	printf("Max value: %f\n", output_array[1]);
+	printf("Min value: %f\n", output_array[2]);
+	printf("Max index: %f\n", output_array[3]);
+	printf("Min index: %f\n", output_array[4]);
+	
+	//C test
+	C_math(input_array, output_array, array_length);
+	
+	printf("RMS value: %f\n", output_array[0]);
+	printf("Max value: %f\n", output_array[1]);
+	printf("Min value: %f\n", output_array[2]);
+	printf("Max index: %f\n", output_array[3]);
+	printf("Min index: %f\n", output_array[4]);
+	*/
 	return 0;
 }

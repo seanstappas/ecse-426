@@ -58,7 +58,6 @@ int CMSIS_math(float* input_array, float* output_array, int array_length) {
 }
 
 // FIR function
-//TODO: Do we need to start at i=0, where previous values are D.N.E.?
 int FIR_C(int* input_array, float* output_array) {
 	//coefficient of the filter
 	float coeff[5] = {0.1,0.15,0.5,0.15,0.1};
@@ -76,23 +75,65 @@ int FIR_C(int* input_array, float* output_array) {
 	return 0;
 }
 
-int main() {
-	float input_array[] = {0.1, 5.2, 3.1, 8};
-	float output_array[5];
-	int array_length = sizeof(input_array) / sizeof(float);
+int test_array(float* input_array, int array_length) {
 	for (int i = 0; i < array_length; i++) {
 		printf("Element %i of input: %f\n", i, input_array[i]);
 	}
+	printf("\n");
 	
-	//asm_math(input_array, output_array, array_length);
-	//CMSIS_math(input_array, output_array, array_length);
-	C_math(input_array, output_array, array_length);
+	float output_array_c[5];
+	C_math(input_array, output_array_c, array_length);
 	
-	printf("RMS value: %f\n", output_array[0]);
-	printf("Max value: %f\n", output_array[1]);
-	printf("Min value: %f\n", output_array[2]);
-	printf("Max index: %f\n", output_array[3]);
-	printf("Min index: %f\n", output_array[4]);
+	float output_array_cmsis[5];
+	CMSIS_math(input_array, output_array_cmsis, array_length);
+	
+	float output_array_asm[5];
+	asm_math(input_array, output_array_asm, array_length);
+	
+	printf("RMS value (CMSIS): %f\n", output_array_cmsis[0]);
+	printf("RMS value (C)    : %f\n", output_array_c[0]);
+	printf("RMS value (ASM)  : %f\n", output_array_asm[0]);
+	printf("\n");
+	
+	printf("Max value (CMSIS): %f\n", output_array_cmsis[1]);
+	printf("Max value (C)    : %f\n", output_array_c[1]);
+	printf("Max value (ASM)  : %f\n", output_array_asm[1]);
+	printf("\n");
+	
+	printf("Min value (CMSIS): %f\n", output_array_cmsis[2]);
+	printf("Min value (C)    : %f\n", output_array_c[2]);
+	printf("Min value (ASM)  : %f\n", output_array_asm[2]);
+	printf("\n");
+	
+	printf("Max index (CMSIS): %f\n", output_array_cmsis[3]);
+	printf("Max index (C)    : %f\n", output_array_c[3]);
+	printf("Max index (ASM)  : %f\n", output_array_asm[3]);
+	printf("\n");
+	
+	printf("Min index (CMSIS): %f\n", output_array_cmsis[4]);
+	printf("Min index (C)    : %f\n", output_array_c[4]);
+	printf("Min index (ASM)  : %f\n", output_array_asm[4]);
+	printf("\n");
+	
+	return 0;
+}
+
+int main() {
+	//float input_array1[] = {0.1, 5.2, 3.1, 8.0};
+	//int array_length = sizeof(input_array1) / sizeof(float);
+	//test_array(input_array1, array_length);
+	
+	//float input_array2[] = {-51040, 5002.32, 3001.21, 8414, 40402.3};
+	//int array_length = sizeof(input_array2) / sizeof(float);
+	//test_array(input_array2, array_length);
+	
+	//float input_array3[] = {0.3311, 14124.322, 300.21, 800.323};
+	//int array_length = sizeof(input_array3) / sizeof(float);
+	//test_array(input_array3, array_length);
+	
+	float input_array4[] = {0.131231, 0.51232, 0.1231321, 0.1231238};
+	int array_length = sizeof(input_array4) / sizeof(float);
+	test_array(input_array4, array_length);
 	
 	return 0;
 }

@@ -378,7 +378,7 @@
       </TargetOption>
       <Groups>
         <Group>
-          <GroupName>Source Group 1</GroupName>
+          <GroupName>Sources</GroupName>
           <Files>
             <File>
               <FileName>main.c</FileName>

@@ -21,6 +21,7 @@ asm_math
 	MOV 			R3, #0				; clear R3 (for current index in array)
 	MOV 			R4, #0				; clear R4 (for current max index in array)
 	MOV 			R5, #0				; clear R5 (for current min index in array)
+	VMOV.f32		S3, R3				; clear S3
 	
 start_loop
 	CMP				R3, R2				; check if the end of the array is reached in the loop

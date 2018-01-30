@@ -6,8 +6,8 @@ extern int asm_math(float* input_array, float* output_array, int array_length);
 
 // C math function
 int C_math(float* input_array, float* output_array, int array_length) {
-
-		float average = 0; int cMinIndex = 0;
+		//initiliaze variables
+		int cMinIndex = 0;
 		int cMaxIndex = 0; float cMax = 0;
 		float cMin = 0; float RMS = 0;
 	//loop through input to compute max,min,indices and rms
@@ -25,7 +25,11 @@ int C_math(float* input_array, float* output_array, int array_length) {
 		RMS = RMS/array_length;
 		RMS = sqrt(RMS);
 		//output array in order RMS Max Min MaxIndex MinIndex
-		output_array[0]=RMS; output_array[1] = cMax; output_array[2] = cMin; output_array[3] = cMaxIndex; output_array[4] = cMinIndex;
+		output_array[0]=RMS; 
+		output_array[1] = cMax; 
+		output_array[2] = cMin;
+		output_array[3] = cMaxIndex; 
+		output_array[4] = cMinIndex;
 		
 	return 0;
 }
@@ -35,14 +39,21 @@ int CMSIS_math(float* input_array, float* output_array, int array_length) {
 	//RMS
 	float rms;
 	arm_rms_f32(input_array, array_length, &rms);
-	//MAX
+	//MAX & INDEX
 	float32_t* max;
-	uint32_t* maxIndex;
-	arm_max_f32(input_array, array_length, max, maxIndex);
-	//MIN
+	uint32_t maxIndex;
+	arm_max_f32(input_array, array_length, max, &maxIndex);
+	//MIN & INDEX
 	float32_t* min;
-	uint32_t* minIndex;
-	arm_min_f32(input_array, array_length, min, minIndex);
+	uint32_t minIndex;
+	arm_min_f32(input_array, array_length, min, &minIndex);
+	
+			output_array[0] = rms;
+			output_array[1] = *max;
+			output_array[2] = *min;
+			output_array[3] = maxIndex; 
+			output_array[4] = minIndex;
+	
 	return 0;
 }
 

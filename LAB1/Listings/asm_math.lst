@@ -29,9 +29,15 @@ ARM Macro Assembler    Page 1
    20 00000004 ED90 1A00       VLDR.f32         S2, [R0, #0] ; set initial min 
                                                             value to first elem
                                                             ent of array
-   21 00000008 F04F 0300       MOV              R3, #0
-   22 0000000C F04F 0400       MOV              R4, #0
-   23 00000010 F04F 0500       MOV              R5, #0
+   21 00000008 F04F 0300       MOV              R3, #0      ; clear R3 (for cur
+                                                            rent index in array
+                                                            )
+   22 0000000C F04F 0400       MOV              R4, #0      ; clear R4 (for cur
+                                                            rent max index in a
+                                                            rray)
+   23 00000010 F04F 0500       MOV              R5, #0      ; clear R5 (for cur
+                                                            rent min index in a
+                                                            rray)
    24 00000014         
    25 00000014         start_loop
    26 00000014 4293            CMP              R3, R2      ; check if the end 
@@ -47,7 +53,9 @@ ARM Macro Assembler    Page 1
    31 0000001C EEB4 0A60       VCMP.f32         S0, S1      ; compare current a
                                                             rray value to curre
                                                             nt max
-   32 00000020 EEF1 FA10       VMRS.f32         APSR_nzcv, FPSCR
+   32 00000020 EEF1 FA10       VMRS.f32         APSR_nzcv, FPSCR ; get the comp
+                                                            arison flags into A
+                                                            PSR
    33 00000024 DC05            BGT              update_max  ; branch to update 
                                                             max if current valu
                                                             e is greater
@@ -55,7 +63,15 @@ ARM Macro Assembler    Page 1
    35 00000026 EEB4 0A41       VCMP.f32         S0, S2      ; compare current a
                                                             rray value to curre
                                                             nt min
-   36 0000002A EEF1 FA10       VMRS.f32         APSR_nzcv, FPSCR
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+   36 0000002A EEF1 FA10       VMRS.f32         APSR_nzcv, FPSCR ; get the comp
+                                                            arison flags into A
+                                                            PSR
    37 0000002E DB04            BLT              update_min  ; branch to update 
                                                             min if current valu
                                                             e is smaller
@@ -63,12 +79,6 @@ ARM Macro Assembler    Page 1
    39 00000030 E007            B                end_loop    ; branch to the end
                                                              of loop operations
                                                             
-
-
-
-ARM Macro Assembler    Page 2 
-
-
    40 00000032         
    41 00000032         update_max
    42 00000032 EEF0 0A40       VMOV.f32         S1, S0      ; move current valu
@@ -118,6 +128,12 @@ ARM Macro Assembler    Page 2
    64 00000064         
    65 00000064 ED81 0A00       VSTR.f32         S0, [R1, #0] ; store the RMS va
                                                             lue in the output a
+
+
+
+ARM Macro Assembler    Page 3 
+
+
                                                             rray
    66 00000068 EDC1 0A01       VSTR.f32         S1, [R1, #4] ; store the max va
                                                             lue in the output a
@@ -128,12 +144,6 @@ ARM Macro Assembler    Page 2
    68 00000070         
    69 00000070 EE00 4A10       VMOV.f32         S0, R4      ; move max index to
                                                              floating point reg
-
-
-
-ARM Macro Assembler    Page 3 
-
-
                                                             ister
    70 00000074 EEB8 0AC0       VCVT.f32.s32     S0, S0      ; convert max index
                                                              from integer to fl

@@ -20,7 +20,7 @@ int C_math(float* input_array, float* output_array, int array_length) {
 				cMaxIndex = i;
 				cMax = input_array[i];
 			}
-			RMS+=i*i;
+			RMS+=input_array[i]*input_array[i];
 		}
 		RMS = RMS/array_length;
 		RMS = sqrt(RMS);
@@ -78,33 +78,14 @@ int FIR_C(int* input_array, float* output_array) {
 
 int main() {
 	float input_array[] = {0.1, 5.2, 3.1, 8};
-	
 	float output_array[5];
 	int array_length = sizeof(input_array) / sizeof(float);
-	
-	for (int i = 0; i < sizeof(input_array) / sizeof(float); i++) {
+	for (int i = 0; i < array_length; i++) {
 		printf("Element %i of input: %f\n", i, input_array[i]);
 	}
 	
-	//Assembly test
-	asm_math(input_array, output_array, array_length);
-	
-	printf("RMS value: %f\n", output_array[0]);
-	printf("Max value: %f\n", output_array[1]);
-	printf("Min value: %f\n", output_array[2]);
-	printf("Max index: %f\n", output_array[3]);
-	printf("Min index: %f\n", output_array[4]);
-	//CMSIS test
-	/*
-	CMSIS_math(input_array, output_array, array_length);
-	
-	printf("RMS value: %f\n", output_array[0]);
-	printf("Max value: %f\n", output_array[1]);
-	printf("Min value: %f\n", output_array[2]);
-	printf("Max index: %f\n", output_array[3]);
-	printf("Min index: %f\n", output_array[4]);
-	
-	//C test
+	//asm_math(input_array, output_array, array_length);
+	//CMSIS_math(input_array, output_array, array_length);
 	C_math(input_array, output_array, array_length);
 	
 	printf("RMS value: %f\n", output_array[0]);
@@ -112,6 +93,6 @@ int main() {
 	printf("Min value: %f\n", output_array[2]);
 	printf("Max index: %f\n", output_array[3]);
 	printf("Min index: %f\n", output_array[4]);
-	*/
+	
 	return 0;
 }

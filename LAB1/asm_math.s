@@ -16,8 +16,8 @@
 ; S4: input array length (converted to floating point)
 
 asm_math
-	VLDR.f32		S1, [R0, #0]		; set initial max value to first element of array
-	VLDR.f32		S2, [R0, #0]		; set initial min value to first element of array
+	VLDR.f32		S1, [R0]			; set initial max value to first element of array
+	VLDR.f32		S2, [R0]			; set initial min value to first element of array
 	MOV 			R3, #0				; clear R3 (for current index in array)
 	MOV 			R4, #0				; clear R4 (for current max index in array)
 	MOV 			R5, #0				; clear R5 (for current min index in array)
@@ -27,7 +27,7 @@ start_loop
 	CMP				R3, R2				; check if the end of the array is reached in the loop
 	BEQ				store_result		; branch to store results			
 	
-	VLDR.f32		S0, [R0, #0]		; load S0 with the current array value
+	VLDR.f32		S0, [R0], #4		; load S0 with the current array value, and increment the pointer
 	
 	VCMP.f32		S0, S1				; compare current array value to current max
 	VMRS.f32	    APSR_nzcv, FPSCR	; get the comparison flags into APSR
@@ -53,7 +53,6 @@ end_loop
 	VMUL.f32		S0, S0, S0			; square array value
 	VADD.f32		S3, S3, S0			; add to running sum of squares
 	ADD				R3, R3, #1			; increment current index of loop
-	ADD				R0, R0, #4			; increase input array memory address
 	B				start_loop			; branch back to the start of the loop
 
 store_result

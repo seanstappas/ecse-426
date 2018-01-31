@@ -23,12 +23,12 @@ ARM Macro Assembler    Page 1
    16 00000000         ; S4: input array length (converted to floating point)
    17 00000000         
    18 00000000         asm_math
-   19 00000000 EDD0 0A00       VLDR.f32         S1, [R0, #0] ; set initial max 
-                                                            value to first elem
-                                                            ent of array
-   20 00000004 ED90 1A00       VLDR.f32         S2, [R0, #0] ; set initial min 
-                                                            value to first elem
-                                                            ent of array
+   19 00000000 EDD0 0A00       VLDR.f32         S1, [R0]    ; set initial max v
+                                                            alue to first eleme
+                                                            nt of array
+   20 00000004 ED90 1A00       VLDR.f32         S2, [R0]    ; set initial min v
+                                                            alue to first eleme
+                                                            nt of array
    21 00000008 F04F 0300       MOV              R3, #0      ; clear R3 (for cur
                                                             rent index in array
                                                             )
@@ -44,12 +44,13 @@ ARM Macro Assembler    Page 1
    27 00000018 4293            CMP              R3, R2      ; check if the end 
                                                             of the array is rea
                                                             ched in the loop
-   28 0000001A D01D            BEQ              store_result ; branch to store 
+   28 0000001A D01B            BEQ              store_result ; branch to store 
                                                             results   
    29 0000001C         
-   30 0000001C ED90 0A00       VLDR.f32         S0, [R0, #0] ; load S0 with the
+   30 0000001C ECB0 0A01       VLDR.f32         S0, [R0], #4 ; load S0 with the
                                                              current array valu
-                                                            e
+                                                            e, and increment th
+                                                            e pointer
    31 00000020         
    32 00000020 EEB4 0A60       VCMP.f32         S0, S1      ; compare current a
                                                             rray value to curre
@@ -62,13 +63,13 @@ ARM Macro Assembler    Page 1
                                                             e is greater
    35 0000002A         
    36 0000002A EEB4 0A41       VCMP.f32         S0, S2      ; compare current a
-                                                            rray value to curre
 
 
 
 ARM Macro Assembler    Page 2 
 
 
+                                                            rray value to curre
                                                             nt min
    37 0000002E EEF1 FA10       VMRS.f32         APSR_nzcv, FPSCR ; get the comp
                                                             arison flags into A
@@ -106,70 +107,68 @@ ARM Macro Assembler    Page 2
                                                             m of squares
    55 0000004E F103 0301       ADD              R3, R3, #1  ; increment current
                                                              index of loop
-   56 00000052 F100 0004       ADD              R0, R0, #4  ; increase input ar
-                                                            ray memory address
-   57 00000056 E7DF            B                start_loop  ; branch back to th
+   56 00000052 E7E1            B                start_loop  ; branch back to th
                                                             e start of the loop
                                                             
-   58 00000058         
-   59 00000058         store_result
-   60 00000058 EE02 2A10       VMOV.f32         S4, R2      ; move array length
+   57 00000054         
+   58 00000054         store_result
+   59 00000054 EE02 2A10       VMOV.f32         S4, R2      ; move array length
                                                              to floating point 
                                                             register
-   61 0000005C EEB8 2AC2       VCVT.f32.s32     S4, S4      ; convert array len
+   60 00000058 EEB8 2AC2       VCVT.f32.s32     S4, S4      ; convert array len
                                                             gth from integer to
                                                              floating point
-   62 00000060         
-   63 00000060 EE81 0A82       VDIV.f32         S0, S3, S4  ; divide sum of squ
+   61 0000005C         
+   62 0000005C EE81 0A82       VDIV.f32         S0, S3, S4  ; divide sum of squ
                                                             ares by length of a
                                                             rray
-   64 00000064 EEB1 0AC0       VSQRT.f32        S0, S0      ; take square root 
+   63 00000060 EEB1 0AC0       VSQRT.f32        S0, S0      ; take square root 
                                                             to obtain RMS value
                                                              in S0
-   65 00000068         
-   66 00000068 ED81 0A00       VSTR.f32         S0, [R1, #0] ; store the RMS va
+   64 00000064         
+   65 00000064 ED81 0A00       VSTR.f32         S0, [R1]    ; store the RMS val
+                                                            ue in the output ar
 
 
 
 ARM Macro Assembler    Page 3 
 
 
+                                                            ray
+   66 00000068 EDC1 0A01       VSTR.f32         S1, [R1, #4] ; store the max va
                                                             lue in the output a
                                                             rray
-   67 0000006C EDC1 0A01       VSTR.f32         S1, [R1, #4] ; store the max va
+   67 0000006C ED81 1A02       VSTR.f32         S2, [R1, #8] ; store the min va
                                                             lue in the output a
                                                             rray
-   68 00000070 ED81 1A02       VSTR.f32         S2, [R1, #8] ; store the min va
-                                                            lue in the output a
-                                                            rray
-   69 00000074         
-   70 00000074 EE00 4A10       VMOV.f32         S0, R4      ; move max index to
+   68 00000070         
+   69 00000070 EE00 4A10       VMOV.f32         S0, R4      ; move max index to
                                                              floating point reg
                                                             ister
-   71 00000078 EEB8 0AC0       VCVT.f32.s32     S0, S0      ; convert max index
+   70 00000074 EEB8 0AC0       VCVT.f32.s32     S0, S0      ; convert max index
                                                              from integer to fl
                                                             oating point
-   72 0000007C ED81 0A03       VSTR.f32         S0, [R1, #12] ; store the max i
+   71 00000078 ED81 0A03       VSTR.f32         S0, [R1, #12] ; store the max i
                                                             ndex in the output 
                                                             array
-   73 00000080         
-   74 00000080 EE00 5A10       VMOV.f32         S0, R5      ; move min index to
+   72 0000007C         
+   73 0000007C EE00 5A10       VMOV.f32         S0, R5      ; move min index to
                                                              floating point reg
                                                             ister
-   75 00000084 EEB8 0AC0       VCVT.f32.s32     S0, S0      ; convert min index
+   74 00000080 EEB8 0AC0       VCVT.f32.s32     S0, S0      ; convert min index
                                                              from integer to fl
                                                             oating point
-   76 00000088 ED81 0A04       VSTR.f32         S0, [R1, #16] ; store the min i
+   75 00000084 ED81 0A04       VSTR.f32         S0, [R1, #16] ; store the min i
                                                             ndex in the output 
                                                             array
-   77 0000008C         
-   78 0000008C E7FF            B                exit        ; branch to exit th
+   76 00000088         
+   77 00000088 E7FF            B                exit        ; branch to exit th
                                                             e subroutine
-   79 0000008E         
-   80 0000008E         exit
-   81 0000008E 4770            BX               LR          ; branch to next in
+   78 0000008A         
+   79 0000008A         exit
+   80 0000008A 4770            BX               LR          ; branch to next in
                                                             struction
-   82 00000090                 END                          ; end subroutine
+   81 0000008C                 END                          ; end subroutine
 Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M4.fp --apcs=int
 erwork --depend=.\objects\asm_math.d -o.\objects\asm_math.o -I.\RTE\_Target_1 -
 IC:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include -IC:\Keil_v5\ARM\PACK\Keil\S
@@ -200,13 +199,13 @@ Symbol: end_loop
       At line 45 in file asm_math.s
       At line 50 in file asm_math.s
 
-exit 0000008E
+exit 0000008A
 
 Symbol: exit
    Definitions
-      At line 80 in file asm_math.s
+      At line 79 in file asm_math.s
    Uses
-      At line 78 in file asm_math.s
+      At line 77 in file asm_math.s
 Comment: exit used once
 start_loop 00000018
 
@@ -214,13 +213,13 @@ Symbol: start_loop
    Definitions
       At line 26 in file asm_math.s
    Uses
-      At line 57 in file asm_math.s
+      At line 56 in file asm_math.s
 Comment: start_loop used once
-store_result 00000058
+store_result 00000054
 
 Symbol: store_result
    Definitions
-      At line 59 in file asm_math.s
+      At line 58 in file asm_math.s
    Uses
       At line 28 in file asm_math.s
 Comment: store_result used once

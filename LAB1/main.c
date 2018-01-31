@@ -81,16 +81,11 @@ int FIR_C(int* input_array, float* output_array, int array_length) {
 }
 
 int test_math_functions(float* input_array, int array_length) {
-	for (int i = 0; i < array_length; i++) {
-		printf("Element %i of input: %f\n", i, input_array[i]);
-	}
-	printf("\n");
+	float output_array_cmsis[5];
+	CMSIS_math(input_array, output_array_cmsis, array_length);
 	
 	float output_array_c[5];
 	C_math(input_array, output_array_c, array_length);
-	
-	float output_array_cmsis[5];
-	CMSIS_math(input_array, output_array_cmsis, array_length);
 	
 	float output_array_asm[5];
 	asm_math(input_array, output_array_asm, array_length);
@@ -157,8 +152,22 @@ int main() {
 	
 	int input_array[] = {-3,-4,3,4,20,10};
 	int array_length = sizeof(input_array) / sizeof(float);
+	
+	printf("Input vector:\n");
+	for (int i = 0; i < array_length; i++) {
+		printf("%i\n", i, input_array[i]);
+	}
+	printf("\n");
+	
 	float output_array[array_length];
 	FIR_C(input_array, output_array, array_length);
+	
+	printf("Filtered vector:\n");
+	for (int i = 0; i < array_length; i++) {
+		printf("%f\n", i, output_array[i]);
+	}
+	printf("\n");
+	
 	test_math_functions(output_array, array_length);
 	
 	return 0;

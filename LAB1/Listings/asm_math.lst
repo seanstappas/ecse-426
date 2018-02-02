@@ -126,15 +126,15 @@ ARM Macro Assembler    Page 2
                                                             to obtain RMS value
                                                              in S0
    64 00000064         
-   65 00000064 ED81 0A00       VSTR.f32         S0, [R1]    ; store the RMS val
-                                                            ue in the output ar
+   65 00000064 ED81 0A00       VSTR.f32         S0, [R1, #0] ; store the RMS va
+                                                            lue in the output a
 
 
 
 ARM Macro Assembler    Page 3 
 
 
-                                                            ray
+                                                            rray
    66 00000068 EDC1 0A01       VSTR.f32         S1, [R1, #4] ; store the max va
                                                             lue in the output a
                                                             rray

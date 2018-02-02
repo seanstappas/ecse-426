@@ -10,7 +10,7 @@ int C_math(float* input_array, float* output_array, int array_length) {
 		int cMinIndex = 0;
 		int cMaxIndex = 0; float cMax = 0;
 		float cMin = 0; float RMS = 0;
-	//loop through input to compute max,min,indices and rms
+		//loop through input to compute max,min,indices and rms
 		for(int i=0; i<array_length; i++){
 			if(cMin>input_array[i] || cMin == 0){
 				cMinIndex = i;
@@ -59,7 +59,7 @@ int CMSIS_math(float* input_array, float* output_array, int array_length) {
 
 
 
-// FIR function
+// C FIR function
 int FIR_C(int* input_array, float* output_array, int array_length) {
 	//coefficient of the filter
 	float coeff[5] = {0.1,0.15,0.5,0.15,0.1};
@@ -76,6 +76,24 @@ int FIR_C(int* input_array, float* output_array, int array_length) {
 			}
 			output_array[i] = sum;
 	}
+	
+	return 0;
+}
+
+int test_filter(int* input_array, float* output_array, int array_length) {
+	printf("Input vector:\n");
+	for (int i = 0; i < array_length; i++) {
+		printf("%i\n", input_array[i]);
+	}
+	printf("\n");
+	
+	FIR_C(input_array, output_array, array_length);
+	
+	printf("Filtered vector:\n");
+	for (int i = 0; i < array_length; i++) {
+		printf("%f\n", output_array[i]);
+	}
+	printf("\n");
 	
 	return 0;
 }
@@ -118,57 +136,39 @@ int test_math_functions(float* input_array, int array_length) {
 	return 0;
 }
 
-int test_filter() {
-	int input_array2[] = {-3,-4,3};
-	int array_length2 = sizeof(input_array2)/sizeof(int);
-	float output_array2[array_length2];
-	FIR_C(input_array2, output_array2, array_length2);
+int test_reference_filter() {
+	float input_array[] = {-3,-4,3,4,20,10};
+	float coeff[5] = {0.1,0.15,0.5,0.15,0.1};
+	int array_length = sizeof(input_array) / sizeof(float);
+	float firStateF32[array_length + 5 - 1];
 	
-	for (int i = 0; i < array_length2; i++) {
-		printf("index %i: %f\n", i, output_array2[i]);
+  arm_fir_instance_f32 S;
+  float outputF32[array_length];
+  /* Initialize input and output buffer pointers */
+  arm_fir_init_f32(&S, 5, coeff, firStateF32, array_length);
+  arm_fir_f32(&S, input_array, outputF32, array_length);
+	
+	printf("Reference vector:\n");
+	for (int i = 0; i < array_length; i++) {
+		printf("%f\n", outputF32[i]);
 	}
+	printf("\n");
+	
+	return 0;
+}
+
+int test_integration() {
+	int input_array[] = {-3,-4,3,4,20,10};
+	int array_length = sizeof(input_array) / sizeof(float);
+	float output_array[array_length];
+	
+	test_filter(input_array, output_array, array_length);
+	test_math_functions(output_array, array_length);
 	
 	return 0;
 }
 
 int main() {
-	//float input_array1[] = {0.1, 5.2, 3.1, 8.0};
-	//int array_length = sizeof(input_array1) / sizeof(float);
-	//test_math_functions(input_array1, array_length);
-	
-	//float input_array2[] = {-51040, 5002.32, 3001.21, 8414, 40402.3};
-	//int array_length = sizeof(input_array2) / sizeof(float);
-	//test_math_functions(input_array2, array_length);
-	
-	//float input_array3[] = {0.3311, 14124.322, 300.21, 800.323};
-	//int array_length = sizeof(input_array3) / sizeof(float);
-	//test_math_functions(input_array3, array_length);
-	
-	//test_filter();
-	
-	//float input_array4[] = {0.131231, 0.51232, 0.1231321, 0.1231238};
-	//int array_length = sizeof(input_array4) / sizeof(float);
-	//test_math_functions(input_array4, array_length);
-	
-	int input_array[] = {-3,-4,3,4,20,10};
-	int array_length = sizeof(input_array) / sizeof(float);
-	
-	printf("Input vector:\n");
-	for (int i = 0; i < array_length; i++) {
-		printf("%i\n", i, input_array[i]);
-	}
-	printf("\n");
-	
-	float output_array[array_length];
-	FIR_C(input_array, output_array, array_length);
-	
-	printf("Filtered vector:\n");
-	for (int i = 0; i < array_length; i++) {
-		printf("%f\n", i, output_array[i]);
-	}
-	printf("\n");
-	
-	test_math_functions(output_array, array_length);
-	
+	test_integration();
 	return 0;
 }

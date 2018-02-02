@@ -10,165 +10,171 @@ ARM Macro Assembler    Page 1
     4 00000000         ; R0: pointer to the input data array
     5 00000000         ; R1: pointer to output array
     6 00000000         ; R2: input array length
-    7 00000000         
-    8 00000000         ; R3: current index in loop over array
+    7 00000000         ; R3: current index in loop over array
+    8 00000000         
     9 00000000         ; R4: current max index
    10 00000000         ; R5: current min index
    11 00000000         
    12 00000000         ; S0: current array value / square of current value (for
-                        RMS) / returned RMS value
+                        RMS) / returned RMS value / input array length (convert
+                       ed to floating point)
    13 00000000         ; S1: current max value / returned max value
    14 00000000         ; S2: current min value / returned min value
    15 00000000         ; S3: running sum of squares (for RMS)
-   16 00000000         ; S4: input array length (converted to floating point)
-   17 00000000         
-   18 00000000         asm_math
-   19 00000000 EDD0 0A00       VLDR.f32         S1, [R0]    ; set initial max v
+   16 00000000         
+   17 00000000         asm_math
+   18 00000000 B410            PUSH             {R4}
+   19 00000002 B420            PUSH             {R5}
+   20 00000004         
+   21 00000004 EDD0 0A00       VLDR.f32         S1, [R0]    ; set initial max v
                                                             alue to first eleme
                                                             nt of array
-   20 00000004 ED90 1A00       VLDR.f32         S2, [R0]    ; set initial min v
+   22 00000008 ED90 1A00       VLDR.f32         S2, [R0]    ; set initial min v
                                                             alue to first eleme
                                                             nt of array
-   21 00000008 F04F 0300       MOV              R3, #0      ; clear R3 (for cur
+   23 0000000C F04F 0300       MOV              R3, #0      ; clear R3 (for cur
                                                             rent index in array
                                                             )
-   22 0000000C F04F 0400       MOV              R4, #0      ; clear R4 (for cur
+   24 00000010 F04F 0400       MOV              R4, #0      ; clear R4 (for cur
                                                             rent max index in a
                                                             rray)
-   23 00000010 F04F 0500       MOV              R5, #0      ; clear R5 (for cur
+   25 00000014 F04F 0500       MOV              R5, #0      ; clear R5 (for cur
                                                             rent min index in a
                                                             rray)
-   24 00000014 EE01 3A90       VMOV.f32         S3, R3      ; clear S3
-   25 00000018         
-   26 00000018         start_loop
-   27 00000018 4293            CMP              R3, R2      ; check if the end 
+   26 00000018 EE01 3A90       VMOV.f32         S3, R3      ; clear S3
+   27 0000001C         
+   28 0000001C         start_loop
+   29 0000001C 4293            CMP              R3, R2      ; check if the end 
                                                             of the array is rea
                                                             ched in the loop
-   28 0000001A D01B            BEQ              store_result ; branch to store 
+   30 0000001E D01B            BEQ              store_result ; branch to store 
                                                             results   
-   29 0000001C         
-   30 0000001C ECB0 0A01       VLDR.f32         S0, [R0], #4 ; load S0 with the
+   31 00000020         
+   32 00000020 ECB0 0A01       VLDR.f32         S0, [R0], #4 ; load S0 with the
                                                              current array valu
                                                             e, and increment th
                                                             e pointer
-   31 00000020         
-   32 00000020 EEB4 0A60       VCMP.f32         S0, S1      ; compare current a
+   33 00000024         
+   34 00000024 EEB4 0A60       VCMP.f32         S0, S1      ; compare current a
                                                             rray value to curre
                                                             nt max
-   33 00000024 EEF1 FA10       VMRS.f32         APSR_nzcv, FPSCR ; get the comp
+   35 00000028 EEF1 FA10       VMRS.f32         APSR_nzcv, FPSCR ; get the comp
                                                             arison flags into A
                                                             PSR
-   34 00000028 DC05            BGT              update_max  ; branch to update 
+   36 0000002C DC05            BGT              update_max  ; branch to update 
                                                             max if current valu
-                                                            e is greater
-   35 0000002A         
-   36 0000002A EEB4 0A41       VCMP.f32         S0, S2      ; compare current a
 
 
 
 ARM Macro Assembler    Page 2 
 
 
+                                                            e is greater
+   37 0000002E         
+   38 0000002E EEB4 0A41       VCMP.f32         S0, S2      ; compare current a
                                                             rray value to curre
                                                             nt min
-   37 0000002E EEF1 FA10       VMRS.f32         APSR_nzcv, FPSCR ; get the comp
+   39 00000032 EEF1 FA10       VMRS.f32         APSR_nzcv, FPSCR ; get the comp
                                                             arison flags into A
                                                             PSR
-   38 00000032 DB04            BLT              update_min  ; branch to update 
+   40 00000036 DB04            BLT              update_min  ; branch to update 
                                                             min if current valu
                                                             e is smaller
-   39 00000034         
-   40 00000034 E007            B                end_loop    ; branch to the end
+   41 00000038         
+   42 00000038 E007            B                end_loop    ; branch to the end
                                                              of loop operations
                                                             
-   41 00000036         
-   42 00000036         update_max
-   43 00000036 EEF0 0A40       VMOV.f32         S1, S0      ; move current valu
+   43 0000003A         
+   44 0000003A         update_max
+   45 0000003A EEF0 0A40       VMOV.f32         S1, S0      ; move current valu
                                                             e to the max value 
                                                             register
-   44 0000003A 461C            MOV              R4, R3      ; move current inde
+   46 0000003E 461C            MOV              R4, R3      ; move current inde
                                                             x to the max index 
                                                             register
-   45 0000003C E003            B                end_loop
-   46 0000003E         
-   47 0000003E         update_min
-   48 0000003E EEB0 1A40       VMOV.f32         S2, S0      ; move current valu
+   47 00000040 E003            B                end_loop
+   48 00000042         
+   49 00000042         update_min
+   50 00000042 EEB0 1A40       VMOV.f32         S2, S0      ; move current valu
                                                             e to the min value 
                                                             register
-   49 00000042 461D            MOV              R5, R3      ; move current valu
+   51 00000046 461D            MOV              R5, R3      ; move current valu
                                                             e to the min index 
                                                             register
-   50 00000044 E7FF            B                end_loop
-   51 00000046         
-   52 00000046         end_loop
-   53 00000046 EE20 0A00       VMUL.f32         S0, S0, S0  ; square array valu
+   52 00000048 E7FF            B                end_loop
+   53 0000004A         
+   54 0000004A         end_loop
+   55 0000004A EE20 0A00       VMUL.f32         S0, S0, S0  ; square array valu
                                                             e
-   54 0000004A EE71 1A80       VADD.f32         S3, S3, S0  ; add to running su
+   56 0000004E EE71 1A80       VADD.f32         S3, S3, S0  ; add to running su
                                                             m of squares
-   55 0000004E F103 0301       ADD              R3, R3, #1  ; increment current
+   57 00000052 F103 0301       ADD              R3, R3, #1  ; increment current
                                                              index of loop
-   56 00000052 E7E1            B                start_loop  ; branch back to th
+   58 00000056 E7E1            B                start_loop  ; branch back to th
                                                             e start of the loop
                                                             
-   57 00000054         
-   58 00000054         store_result
-   59 00000054 EE02 2A10       VMOV.f32         S4, R2      ; move array length
-                                                             to floating point 
-                                                            register
-   60 00000058 EEB8 2AC2       VCVT.f32.s32     S4, S4      ; convert array len
-                                                            gth from integer to
-                                                             floating point
-   61 0000005C         
-   62 0000005C EE81 0A82       VDIV.f32         S0, S3, S4  ; divide sum of squ
-                                                            ares by length of a
-                                                            rray
-   63 00000060 EEB1 0AC0       VSQRT.f32        S0, S0      ; take square root 
-                                                            to obtain RMS value
-                                                             in S0
+   59 00000058         
+   60 00000058         store_result
+   61 00000058 EE00 4A10       VMOV.f32         S0, R4      ; move max index to
+                                                             floating point reg
+                                                            ister
+   62 0000005C EEB8 0AC0       VCVT.f32.s32     S0, S0      ; convert max index
+                                                             from integer to fl
+                                                            oating point
+   63 00000060 ED81 0A03       VSTR.f32         S0, [R1, #12] ; store the max i
+                                                            ndex in the output 
+                                                            array
    64 00000064         
-   65 00000064 ED81 0A00       VSTR.f32         S0, [R1, #0] ; store the RMS va
-                                                            lue in the output a
+   65 00000064 EE00 5A10       VMOV.f32         S0, R5      ; move min index to
+                                                             floating point reg
+                                                            ister
 
 
 
 ARM Macro Assembler    Page 3 
 
 
-                                                            rray
-   66 00000068 EDC1 0A01       VSTR.f32         S1, [R1, #4] ; store the max va
-                                                            lue in the output a
-                                                            rray
-   67 0000006C ED81 1A02       VSTR.f32         S2, [R1, #8] ; store the min va
-                                                            lue in the output a
-                                                            rray
+   66 00000068 EEB8 0AC0       VCVT.f32.s32     S0, S0      ; convert min index
+                                                             from integer to fl
+                                                            oating point
+   67 0000006C ED81 0A04       VSTR.f32         S0, [R1, #16] ; store the min i
+                                                            ndex in the output 
+                                                            array
    68 00000070         
-   69 00000070 EE00 4A10       VMOV.f32         S0, R4      ; move max index to
-                                                             floating point reg
-                                                            ister
-   70 00000074 EEB8 0AC0       VCVT.f32.s32     S0, S0      ; convert max index
-                                                             from integer to fl
-                                                            oating point
-   71 00000078 ED81 0A03       VSTR.f32         S0, [R1, #12] ; store the max i
-                                                            ndex in the output 
-                                                            array
-   72 0000007C         
-   73 0000007C EE00 5A10       VMOV.f32         S0, R5      ; move min index to
-                                                             floating point reg
-                                                            ister
-   74 00000080 EEB8 0AC0       VCVT.f32.s32     S0, S0      ; convert min index
-                                                             from integer to fl
-                                                            oating point
-   75 00000084 ED81 0A04       VSTR.f32         S0, [R1, #16] ; store the min i
-                                                            ndex in the output 
-                                                            array
-   76 00000088         
-   77 00000088 E7FF            B                exit        ; branch to exit th
+   69 00000070 EE00 2A10       VMOV.f32         S0, R2      ; move array length
+                                                             to floating point 
+                                                            register
+   70 00000074 EEB8 0AC0       VCVT.f32.s32     S0, S0      ; convert array len
+                                                            gth from integer to
+                                                             floating point
+   71 00000078         
+   72 00000078 EE81 0A80       VDIV.f32         S0, S3, S0  ; divide sum of squ
+                                                            ares by length of a
+                                                            rray
+   73 0000007C EEB1 0AC0       VSQRT.f32        S0, S0      ; take square root 
+                                                            to obtain RMS value
+                                                             in S0
+   74 00000080         
+   75 00000080 ED81 0A00       VSTR.f32         S0, [R1, #0] ; store the RMS va
+                                                            lue in the output a
+                                                            rray
+   76 00000084 EDC1 0A01       VSTR.f32         S1, [R1, #4] ; store the max va
+                                                            lue in the output a
+                                                            rray
+   77 00000088 ED81 1A02       VSTR.f32         S2, [R1, #8] ; store the min va
+                                                            lue in the output a
+                                                            rray
+   78 0000008C         
+   79 0000008C BC20            POP              {R5}
+   80 0000008E BC10            POP              {R4}
+   81 00000090         
+   82 00000090 E7FF            B                exit        ; branch to exit th
                                                             e subroutine
-   78 0000008A         
-   79 0000008A         exit
-   80 0000008A 4770            BX               LR          ; branch to next in
+   83 00000092         
+   84 00000092         exit
+   85 00000092 4770            BX               LR          ; branch to next in
                                                             struction
-   81 0000008C                 END                          ; end subroutine
+   86 00000094                 END                          ; end subroutine
 Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M4.fp --apcs=int
 erwork --depend=.\objects\asm_math.d -o.\objects\asm_math.o -I.\RTE\_Target_1 -
 IC:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include -IC:\Keil_v5\ARM\PACK\Keil\S
@@ -185,43 +191,43 @@ asm_math 00000000
 
 Symbol: asm_math
    Definitions
-      At line 18 in file asm_math.s
+      At line 17 in file asm_math.s
    Uses
       At line 2 in file asm_math.s
 Comment: asm_math used once
-end_loop 00000046
+end_loop 0000004A
 
 Symbol: end_loop
    Definitions
-      At line 52 in file asm_math.s
+      At line 54 in file asm_math.s
    Uses
-      At line 40 in file asm_math.s
-      At line 45 in file asm_math.s
-      At line 50 in file asm_math.s
+      At line 42 in file asm_math.s
+      At line 47 in file asm_math.s
+      At line 52 in file asm_math.s
 
-exit 0000008A
+exit 00000092
 
 Symbol: exit
    Definitions
-      At line 79 in file asm_math.s
+      At line 84 in file asm_math.s
    Uses
-      At line 77 in file asm_math.s
+      At line 82 in file asm_math.s
 Comment: exit used once
-start_loop 00000018
+start_loop 0000001C
 
 Symbol: start_loop
    Definitions
-      At line 26 in file asm_math.s
+      At line 28 in file asm_math.s
    Uses
-      At line 56 in file asm_math.s
+      At line 58 in file asm_math.s
 Comment: start_loop used once
-store_result 00000054
+store_result 00000058
 
 Symbol: store_result
    Definitions
-      At line 58 in file asm_math.s
+      At line 60 in file asm_math.s
    Uses
-      At line 28 in file asm_math.s
+      At line 30 in file asm_math.s
 Comment: store_result used once
 text 00000000
 
@@ -231,15 +237,15 @@ Symbol: text
    Uses
       None
 Comment: text unused
-update_max 00000036
+update_max 0000003A
 
 Symbol: update_max
    Definitions
-      At line 42 in file asm_math.s
+      At line 44 in file asm_math.s
    Uses
-      At line 34 in file asm_math.s
+      At line 36 in file asm_math.s
 Comment: update_max used once
-update_min 0000003E
+update_min 00000042
 
 
 
@@ -249,9 +255,9 @@ Relocatable symbols
 
 Symbol: update_min
    Definitions
-      At line 47 in file asm_math.s
+      At line 49 in file asm_math.s
    Uses
-      At line 38 in file asm_math.s
+      At line 40 in file asm_math.s
 Comment: update_min used once
 8 symbols
 343 symbols in table

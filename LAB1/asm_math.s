@@ -9,13 +9,15 @@
 ; R4: current max index
 ; R5: current min index
 
-; S0: current array value / square of current value (for RMS) / returned RMS value
+; S0: current array value / square of current value (for RMS) / returned RMS value / input array length (converted to floating point)
 ; S1: current max value / returned max value
 ; S2: current min value / returned min value
 ; S3: running sum of squares (for RMS)
-; S4: input array length (converted to floating point)
 
 asm_math
+	PUSH {R4}							; save the value of R4 to the stack (since it is not a scratch register)
+	PUSH {R5}							; save the value of R5 to the stack (since it is not a scratch register)
+	
 	VLDR.f32		S1, [R0]			; set initial max value to first element of array
 	VLDR.f32		S2, [R0]			; set initial min value to first element of array
 	MOV 			R3, #0				; clear R3 (for current index in array)
@@ -56,16 +58,6 @@ end_loop
 	B				start_loop			; branch back to the start of the loop
 
 store_result
-	VMOV.f32		S4, R2				; move array length to floating point register
-	VCVT.f32.s32	S4, S4				; convert array length from integer to floating point
-	
-	VDIV.f32		S0, S3, S4			; divide sum of squares by length of array
-	VSQRT.f32		S0, S0				; take square root to obtain RMS value in S0
-
-	VSTR.f32		S0, [R1, #0]		; store the RMS value in the output array
-	VSTR.f32		S1, [R1, #4]		; store the max value in the output array
-	VSTR.f32		S2, [R1, #8]		; store the min value in the output array
-	
 	VMOV.f32		S0, R4				; move max index to floating point register
 	VCVT.f32.s32	S0, S0				; convert max index from integer to floating point
 	VSTR.f32		S0, [R1, #12]		; store the max index in the output array
@@ -73,6 +65,19 @@ store_result
 	VMOV.f32		S0, R5				; move min index to floating point register
 	VCVT.f32.s32	S0, S0				; convert min index from integer to floating point
 	VSTR.f32		S0, [R1, #16]		; store the min index in the output array
+	
+	VMOV.f32		S0, R2				; move array length to floating point register
+	VCVT.f32.s32	S0, S0				; convert array length from integer to floating point
+	
+	VDIV.f32		S0, S3, S0			; divide sum of squares by length of array
+	VSQRT.f32		S0, S0				; take square root to obtain RMS value in S0
+
+	VSTR.f32		S0, [R1, #0]		; store the RMS value in the output array
+	VSTR.f32		S1, [R1, #4]		; store the max value in the output array
+	VSTR.f32		S2, [R1, #8]		; store the min value in the output array
+	
+	POP {R5}							; restore the value of R5 from the stack (since it is not a scratch register)
+	POP {R4}							; restore the value of R4 from the stack (since it is not a scratch register)
 	
 	B 				exit				; branch to exit the subroutine
 

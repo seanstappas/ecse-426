@@ -100,37 +100,36 @@ int test_filter(int* input_array, float* output_array, int array_length) {
 
 int test_math_functions(float* input_array, int array_length) {
 	float output_array_cmsis[5];
-	CMSIS_math(input_array, output_array_cmsis, array_length);
-	
 	float output_array_c[5];
+	float output_array_asm[5];
+	
+	asm_math(input_array, output_array_asm, array_length);
+	CMSIS_math(input_array, output_array_cmsis, array_length);
 	C_math(input_array, output_array_c, array_length);
 	
-	float output_array_asm[5];
-	asm_math(input_array, output_array_asm, array_length);
-	
+	printf("RMS value (ASM)  : %f\n", output_array_asm[0]);
 	printf("RMS value (CMSIS): %f\n", output_array_cmsis[0]);
 	printf("RMS value (C)    : %f\n", output_array_c[0]);
-	printf("RMS value (ASM)  : %f\n", output_array_asm[0]);
 	printf("\n");
 	
+	printf("Max value (ASM)  : %f\n", output_array_asm[1]);
 	printf("Max value (CMSIS): %f\n", output_array_cmsis[1]);
 	printf("Max value (C)    : %f\n", output_array_c[1]);
-	printf("Max value (ASM)  : %f\n", output_array_asm[1]);
 	printf("\n");
 	
+	printf("Min value (ASM)  : %f\n", output_array_asm[2]);
 	printf("Min value (CMSIS): %f\n", output_array_cmsis[2]);
 	printf("Min value (C)    : %f\n", output_array_c[2]);
-	printf("Min value (ASM)  : %f\n", output_array_asm[2]);
 	printf("\n");
 	
+	printf("Max index (ASM)  : %f\n", output_array_asm[3]);
 	printf("Max index (CMSIS): %f\n", output_array_cmsis[3]);
 	printf("Max index (C)    : %f\n", output_array_c[3]);
-	printf("Max index (ASM)  : %f\n", output_array_asm[3]);
 	printf("\n");
 	
+	printf("Min index (ASM)  : %f\n", output_array_asm[4]);
 	printf("Min index (CMSIS): %f\n", output_array_cmsis[4]);
 	printf("Min index (C)    : %f\n", output_array_c[4]);
-	printf("Min index (ASM)  : %f\n", output_array_asm[4]);
 	printf("\n");
 	
 	return 0;

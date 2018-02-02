@@ -10,8 +10,8 @@ ARM Macro Assembler    Page 1
     4 00000000         ; R0: pointer to the input data array
     5 00000000         ; R1: pointer to output array
     6 00000000         ; R2: input array length
-    7 00000000         ; R3: current index in loop over array
-    8 00000000         
+    7 00000000         
+    8 00000000         ; R3: current index in loop over array
     9 00000000         ; R4: current max index
    10 00000000         ; R5: current min index
    11 00000000         
@@ -23,8 +23,14 @@ ARM Macro Assembler    Page 1
    15 00000000         ; S3: running sum of squares (for RMS)
    16 00000000         
    17 00000000         asm_math
-   18 00000000 B410            PUSH             {R4}
-   19 00000002 B420            PUSH             {R5}
+   18 00000000 B410            PUSH             {R4}        ; save the value of
+                                                             R4 to the stack (s
+                                                            ince it is not a sc
+                                                            ratch register)
+   19 00000002 B420            PUSH             {R5}        ; save the value of
+                                                             R5 to the stack (s
+                                                            ince it is not a sc
+                                                            ratch register)
    20 00000004         
    21 00000004 EDD0 0A00       VLDR.f32         S1, [R0]    ; set initial max v
                                                             alue to first eleme
@@ -57,18 +63,18 @@ ARM Macro Assembler    Page 1
    33 00000024         
    34 00000024 EEB4 0A60       VCMP.f32         S0, S1      ; compare current a
                                                             rray value to curre
-                                                            nt max
-   35 00000028 EEF1 FA10       VMRS.f32         APSR_nzcv, FPSCR ; get the comp
-                                                            arison flags into A
-                                                            PSR
-   36 0000002C DC05            BGT              update_max  ; branch to update 
-                                                            max if current valu
 
 
 
 ARM Macro Assembler    Page 2 
 
 
+                                                            nt max
+   35 00000028 EEF1 FA10       VMRS.f32         APSR_nzcv, FPSCR ; get the comp
+                                                            arison flags into A
+                                                            PSR
+   36 0000002C DC05            BGT              update_max  ; branch to update 
+                                                            max if current valu
                                                             e is greater
    37 0000002E         
    38 0000002E EEB4 0A41       VCMP.f32         S0, S2      ; compare current a
@@ -122,18 +128,18 @@ ARM Macro Assembler    Page 2
                                                              from integer to fl
                                                             oating point
    63 00000060 ED81 0A03       VSTR.f32         S0, [R1, #12] ; store the max i
-                                                            ndex in the output 
-                                                            array
-   64 00000064         
-   65 00000064 EE00 5A10       VMOV.f32         S0, R5      ; move min index to
-                                                             floating point reg
-                                                            ister
 
 
 
 ARM Macro Assembler    Page 3 
 
 
+                                                            ndex in the output 
+                                                            array
+   64 00000064         
+   65 00000064 EE00 5A10       VMOV.f32         S0, R5      ; move min index to
+                                                             floating point reg
+                                                            ister
    66 00000068 EEB8 0AC0       VCVT.f32.s32     S0, S0      ; convert min index
                                                              from integer to fl
                                                             oating point
@@ -165,8 +171,16 @@ ARM Macro Assembler    Page 3
                                                             lue in the output a
                                                             rray
    78 0000008C         
-   79 0000008C BC20            POP              {R5}
-   80 0000008E BC10            POP              {R4}
+   79 0000008C BC20            POP              {R5}        ; restore the value
+                                                             of R5 from the sta
+                                                            ck (since it is not
+                                                             a scratch register
+                                                            )
+   80 0000008E BC10            POP              {R4}        ; restore the value
+                                                             of R4 from the sta
+                                                            ck (since it is not
+                                                             a scratch register
+                                                            )
    81 00000090         
    82 00000090 E7FF            B                exit        ; branch to exit th
                                                             e subroutine
@@ -179,6 +193,12 @@ Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M4.fp --apcs=int
 erwork --depend=.\objects\asm_math.d -o.\objects\asm_math.o -I.\RTE\_Target_1 -
 IC:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include -IC:\Keil_v5\ARM\PACK\Keil\S
 TM32F4xx_DFP\2.11.0\Drivers\CMSIS\Device\ST\STM32F4xx\Include --predefine="__EV
+
+
+
+ARM Macro Assembler    Page 4 
+
+
 AL SETA 1" --predefine="__UVISION_VERSION SETA 524" --predefine="_RTE_ SETA 1" 
 --predefine="STM32F407xx SETA 1" --list=.\listings\asm_math.lst asm_math.s
 

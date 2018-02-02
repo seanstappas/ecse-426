@@ -57,8 +57,6 @@ int CMSIS_math(float* input_array, float* output_array, int array_length) {
 	return 0;
 }
 
-
-
 // C FIR function
 int FIR_C(int* input_array, float* output_array, int array_length) {
 	//coefficient of the filter
@@ -80,6 +78,7 @@ int FIR_C(int* input_array, float* output_array, int array_length) {
 	return 0;
 }
 
+// Tests the C FIR filter
 int test_filter(int* input_array, float* output_array, int array_length) {
 	printf("Input vector:\n");
 	for (int i = 0; i < array_length; i++) {
@@ -98,6 +97,7 @@ int test_filter(int* input_array, float* output_array, int array_length) {
 	return 0;
 }
 
+// Tests all the math functions (assembly, CMSIS and C)
 int test_math_functions(float* input_array, int array_length) {
 	float output_array_cmsis[5];
 	float output_array_c[5];
@@ -135,6 +135,7 @@ int test_math_functions(float* input_array, int array_length) {
 	return 0;
 }
 
+// Tests a CMSIS FIR filter for reference.
 int test_reference_filter() {
 	float input_array[] = {-3,-4,3,4,20,10};
 	float coeff[5] = {0.1,0.15,0.5,0.15,0.1};
@@ -156,6 +157,7 @@ int test_reference_filter() {
 	return 0;
 }
 
+// Tests the filter in combination with the math functions
 int test_integration() {
 	int input_array[] = {-3,-4,3,4,20,10};
 	int array_length = sizeof(input_array) / sizeof(float);

@@ -63,7 +63,7 @@ float FIR_C2(int input, float output){
 	int* ptr = &input;
 	ptr -= 4;
 	for(int i=0;i<order;i++){
-		output = *ptr * coeff[i];
+		output += *ptr * coeff[i];
 	}
 	return output;
 }

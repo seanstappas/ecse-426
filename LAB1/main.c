@@ -57,6 +57,17 @@ int CMSIS_math(float* input_array, float* output_array, int array_length) {
 	return 0;
 }
 
+float FIR_C2(int input, float output){
+	float coeff[5] = {0.2,0.2,0.2,0.2,0.2};
+	int order = 5;
+	int* ptr = &input;
+	ptr -= 4;
+	for(int i=0;i<order;i++){
+		output = *ptr * coeff[i];
+	}
+	return output;
+}
+
 // C FIR function
 int FIR_C(int* input_array, float* output_array, int array_length) {
 	//coefficient of the filter
@@ -170,6 +181,7 @@ int test_integration() {
 }
 
 int main() {
+	
 	test_integration();
 	return 0;
 }

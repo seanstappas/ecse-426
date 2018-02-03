@@ -6,11 +6,11 @@ extern int asm_math(float* input_array, float* output_array, int array_length);
 
 // C math function
 int C_math(float* input_array, float* output_array, int array_length) {
-		//initiliaze variables
+		// initiliaze variables
 		int cMinIndex = 0;
 		int cMaxIndex = 0; float cMax = 0;
 		float cMin = 0; float RMS = 0;
-		//loop through input to compute max,min,indices and rms
+		// loop through input to compute max,min,indices and rms
 		for(int i=0; i<array_length; i++){
 			if(cMin>input_array[i] || cMin == 0){
 				cMinIndex = i;
@@ -24,7 +24,7 @@ int C_math(float* input_array, float* output_array, int array_length) {
 		}
 		RMS = RMS/array_length;
 		RMS = sqrt(RMS);
-		//output array in order RMS Max Min MaxIndex MinIndex
+		// output array in order RMS Max Min MaxIndex MinIndex
 		output_array[0]=RMS; 
 		output_array[1] = cMax; 
 		output_array[2] = cMin;
@@ -36,14 +36,14 @@ int C_math(float* input_array, float* output_array, int array_length) {
 
 // CMSIS math function
 int CMSIS_math(float* input_array, float* output_array, int array_length) {
-	//RMS
+	// RMS
 	float rms;
 	arm_rms_f32(input_array, array_length, &rms);
-	//MAX & INDEX
+	// MAX & INDEX
 	float32_t max;
 	uint32_t maxIndex;
 	arm_max_f32(input_array, array_length, &max, &maxIndex);
-	//MIN & INDEX
+	// MIN & INDEX
 	float32_t min;
 	uint32_t minIndex;
 	arm_min_f32(input_array, array_length, &min, &minIndex);
@@ -57,26 +57,15 @@ int CMSIS_math(float* input_array, float* output_array, int array_length) {
 	return 0;
 }
 
-float FIR_C2(int input, float output){
-	float coeff[5] = {0.2,0.2,0.2,0.2,0.2};
-	int order = 5;
-	int* ptr = &input;
-	ptr -= 4;
-	for(int i=0;i<order;i++){
-		output += *ptr * coeff[i];
-	}
-	return output;
-}
-
 // C FIR function
 int FIR_C(int* input_array, float* output_array, int array_length) {
-	//coefficient of the filter
+	// coefficients of the filter
 	float coeff[5] = {0.1,0.15,0.5,0.15,0.1};
 	int order = 5;
-	//loop through array
+	// loop through array
 	for(int i = 0;i<array_length;i++){
 		float sum = 0.0;
-			//compute sum
+			// compute sum
 			for(int j = order-1; j >=0; j--){
 					int sumIndex = i-j;
 					if(sumIndex>=0){
@@ -146,28 +135,6 @@ int test_math_functions(float* input_array, int array_length) {
 	return 0;
 }
 
-// Tests a CMSIS FIR filter for reference.
-int test_reference_filter() {
-	float input_array[] = {-3,-4,3,4,20,10};
-	float coeff[5] = {0.1,0.15,0.5,0.15,0.1};
-	int array_length = sizeof(input_array) / sizeof(float);
-	float firStateF32[array_length + 5 - 1];
-	
-  arm_fir_instance_f32 S;
-  float outputF32[array_length];
-  /* Initialize input and output buffer pointers */
-  arm_fir_init_f32(&S, 5, coeff, firStateF32, array_length);
-  arm_fir_f32(&S, input_array, outputF32, array_length);
-	
-	printf("Reference vector:\n");
-	for (int i = 0; i < array_length; i++) {
-		printf("%f\n", outputF32[i]);
-	}
-	printf("\n");
-	
-	return 0;
-}
-
 // Tests the filter in combination with the math functions
 int test_integration() {
 	int input_array[] = {-3,-4,3,4,20,10};
@@ -181,7 +148,6 @@ int test_integration() {
 }
 
 int main() {
-	
 	test_integration();
 	return 0;
 }

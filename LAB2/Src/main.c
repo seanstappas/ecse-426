@@ -107,6 +107,11 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+		if(HAL_GPIO_ReadPin(Button_GPIO_Port, Button_Pin))  
+		{
+			printf("Button pressed!\n");
+			HAL_Delay(100);
+		}
 
   /* USER CODE END WHILE */
 
@@ -246,9 +251,17 @@ static void MX_DAC_Init(void)
 static void MX_GPIO_Init(void)
 {
 
+  GPIO_InitTypeDef GPIO_InitStruct;
+
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+
+  /*Configure GPIO pin : Button_Pin */
+  GPIO_InitStruct.Pin = Button_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(Button_GPIO_Port, &GPIO_InitStruct);
 
 }
 

@@ -1,7 +1,7 @@
 [PreviousGenFiles]
-HeaderPath=C:/Users/Sean/Documents/GitHub/ecse-426/LAB2/STM32CubeMX/Lab2/Inc
+HeaderPath=Y:/GitHub/ecse-426/LAB2/Inc
 HeaderFiles=stm32f4xx_it.h;stm32f4xx_hal_conf.h;main.h;
-SourcePath=C:/Users/Sean/Documents/GitHub/ecse-426/LAB2/STM32CubeMX/Lab2/Src
+SourcePath=Y:/GitHub/ecse-426/LAB2/Src
 SourceFiles=stm32f4xx_it.c;stm32f4xx_hal_msp.c;main.c;
 
 [PreviousLibFiles]

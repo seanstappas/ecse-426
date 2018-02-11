@@ -40,7 +40,8 @@
 #include "stm32f4xx_hal.h"
 
 /* USER CODE BEGIN Includes */
-
+// TODO: constants file
+#define V_REF 3
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -65,15 +66,30 @@ static void MX_DAC_Init(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
+// Handle ADC input signal
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
 	if (__HAL_ADC_GET_FLAG(hadc, ADC_FLAG_EOC))
 	{
 		unsigned ADC_raw = HAL_ADC_GetValue(hadc);
-		//unsigned int Vdd = 
-		printf("Raw ADC value: %u\n", ADC_raw);
-		//printf("Converted voltage: %u", ADC_raw);
+		//printf("Raw ADC value: %u\n", ADC_raw);
+		printf("ADC input: %f V\n", (ADC_raw / 1023.0) * V_REF);
 	}
+}
+
+// Isolates for DOR in the following formula: DAC_OUTx = VREF+ * DOR / 4095.
+uint32_t voltage_to_ADC_DOR(float voltage)
+{
+	return (uint32_t)((voltage * 4095) / V_REF);
+}
+
+void set_DAC_value(float voltage)
+{
+	uint32_t converted_DAC_value = voltage_to_ADC_DOR(voltage);
+	//printf("Converted DAC value: %u\n", converted_DAC_value);
+	HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, converted_DAC_value);
+	printf("DAC output: %f V\n", V_REF * converted_DAC_value / 4095.0);
+	//printf("Last DAC value: %u\n", HAL_DAC_GetValue(&hdac, DAC_CHANNEL_1));
 }
 /* USER CODE END 0 */
 
@@ -109,20 +125,26 @@ int main(void)
   MX_ADC1_Init();
   MX_DAC_Init();
   /* USER CODE BEGIN 2 */
-	HAL_ADC_Start_IT(&hadc1);
+	HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+		// Read the B1 button (PA0)
 		if(HAL_GPIO_ReadPin(Button_GPIO_Port, Button_Pin))  
 		{
 			printf("Button pressed!\n");
 		}
 		
-		HAL_Delay(100);
+		// Set the ADC voltage (PA4)
+		set_DAC_value(1.5);
+		
+		// Read the ADC input (PA1)
 		HAL_ADC_Start_IT(&hadc1);
+		
+		HAL_Delay(100);
 
   /* USER CODE END WHILE */
 

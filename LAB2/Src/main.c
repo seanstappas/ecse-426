@@ -65,7 +65,16 @@ static void MX_DAC_Init(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
-
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+{
+	if (__HAL_ADC_GET_FLAG(hadc, ADC_FLAG_EOC))
+	{
+		unsigned ADC_raw = HAL_ADC_GetValue(hadc);
+		//unsigned int Vdd = 
+		printf("Raw ADC value: %u\n", ADC_raw);
+		//printf("Converted voltage: %u", ADC_raw);
+	}
+}
 /* USER CODE END 0 */
 
 /**
@@ -100,7 +109,7 @@ int main(void)
   MX_ADC1_Init();
   MX_DAC_Init();
   /* USER CODE BEGIN 2 */
-
+	HAL_ADC_Start_IT(&hadc1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -110,8 +119,10 @@ int main(void)
 		if(HAL_GPIO_ReadPin(Button_GPIO_Port, Button_Pin))  
 		{
 			printf("Button pressed!\n");
-			HAL_Delay(100);
 		}
+		
+		HAL_Delay(100);
+		HAL_ADC_Start_IT(&hadc1);
 
   /* USER CODE END WHILE */
 

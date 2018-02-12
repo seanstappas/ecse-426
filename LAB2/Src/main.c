@@ -117,6 +117,7 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
+	HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq() / 50); // Set SysTick interrupt frequency to 50 Hz
 
   /* USER CODE END SysInit */
 

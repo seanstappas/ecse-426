@@ -49,8 +49,32 @@
 
 /* Private define ------------------------------------------------------------*/
 
+#define Digit2_Pin GPIO_PIN_2
+#define Digit2_GPIO_Port GPIOE
+#define Digit3_Pin GPIO_PIN_3
+#define Digit3_GPIO_Port GPIOE
 #define Button_Pin GPIO_PIN_0
 #define Button_GPIO_Port GPIOA
+#define SegmentA_Pin GPIO_PIN_0
+#define SegmentA_GPIO_Port GPIOD
+#define SegmentB_Pin GPIO_PIN_1
+#define SegmentB_GPIO_Port GPIOD
+#define SegmentC_Pin GPIO_PIN_2
+#define SegmentC_GPIO_Port GPIOD
+#define SegmentD_Pin GPIO_PIN_3
+#define SegmentD_GPIO_Port GPIOD
+#define SegmentE_Pin GPIO_PIN_4
+#define SegmentE_GPIO_Port GPIOD
+#define SegmentF_Pin GPIO_PIN_5
+#define SegmentF_GPIO_Port GPIOD
+#define SegmentG_Pin GPIO_PIN_6
+#define SegmentG_GPIO_Port GPIOD
+#define SegmentDP_Pin GPIO_PIN_7
+#define SegmentDP_GPIO_Port GPIOD
+#define Digit0_Pin GPIO_PIN_0
+#define Digit0_GPIO_Port GPIOE
+#define Digit1_Pin GPIO_PIN_1
+#define Digit1_GPIO_Port GPIOE
 
 /* ########################## Assert Selection ############################## */
 /**

@@ -38,6 +38,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f4xx_hal.h"
+#include "arm_math.h"
 
 /* USER CODE BEGIN Includes */
 /* USER CODE END Includes */
@@ -52,7 +53,8 @@ DAC_HandleTypeDef hdac;
 volatile int systick_flag = 0;
 int current_display_digit = 0;
 int current_display_mode = 0;
-
+float runningMin = 5;
+float runningMax = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -68,6 +70,31 @@ static void MX_DAC_Init(void);
 
 /* USER CODE BEGIN 0 */
 // Handle ADC input signal
+
+void compare(float* input_array, float* output_array, int array_length){
+	// RMS
+	float rms;
+	arm_rms_f32(input_array, array_length, &rms);
+	// MAX & INDEX
+	float32_t max;
+	uint32_t maxIndex;
+	arm_max_f32(input_array, array_length, &max, &maxIndex);
+	// MIN & INDEX
+	float32_t min;
+	uint32_t minIndex;
+	arm_min_f32(input_array, array_length, &min, &minIndex);
+	if(runningMax<max){
+		runningMax = max;
+	}
+	if(runningMin>min){
+		runningMin = min;
+	}
+			output_array[0] = rms;
+			output_array[1] = runningMax;
+			output_array[2] = runningMin;
+			output_array[3] = maxIndex; 
+			output_array[4] = minIndex;
+}
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
 	if (__HAL_ADC_GET_FLAG(hadc, ADC_FLAG_EOC))

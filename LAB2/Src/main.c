@@ -55,6 +55,8 @@ int current_display_digit = 0;
 int current_display_mode = 0;
 float runningMin = 5;
 float runningMax = 0;
+float ADC_value = 0.0;
+int button_ticks = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -101,7 +103,8 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 	{
 		unsigned ADC_raw = HAL_ADC_GetValue(hadc);
 		//printf("Raw ADC value: %u\n", ADC_raw);
-		printf("ADC input: %f V\n", (ADC_raw / 1023.0) * V_REF);
+		//printf("ADC input: %f V\n", (ADC_raw / 1023.0) * V_REF);
+		ADC_value = (ADC_raw / 1023.0) * V_REF;
 	}
 }
 
@@ -116,7 +119,7 @@ void set_DAC_value(float voltage)
 	uint32_t converted_DAC_value = voltage_to_ADC_DOR(voltage);
 	//printf("Converted DAC value: %u\n", converted_DAC_value);
 	HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, converted_DAC_value);
-	printf("DAC output: %f V\n", V_REF * converted_DAC_value / 4095.0);
+	//printf("DAC output: %f V\n", V_REF * converted_DAC_value / 4095.0);
 	//printf("Last DAC value: %u\n", HAL_DAC_GetValue(&hdac, DAC_CHANNEL_1));
 }
 
@@ -125,44 +128,42 @@ void set_DAC_value(float voltage)
 // Pins PE0 to PE3: Digits
 
 
-
 void display_digit(int digit)
 {
 	switch(digit) {
 		case 0:
 			HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentD_Pin 
                           |SegmentE_Pin|SegmentF_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOD, SegmentG_Pin|SegmentDP_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOD, SegmentG_Pin, GPIO_PIN_RESET);
 			break;
 		case 1:
 			HAL_GPIO_WritePin(GPIOD, SegmentB_Pin|SegmentC_Pin, GPIO_PIN_SET);
 			HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentD_Pin 
-                          |SegmentE_Pin|SegmentF_Pin|SegmentG_Pin|SegmentDP_Pin, GPIO_PIN_RESET);
+                          |SegmentE_Pin|SegmentF_Pin|SegmentG_Pin, GPIO_PIN_RESET);
 			break;
 		case 2:
 			HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentD_Pin 
                           |SegmentE_Pin|SegmentG_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOD, SegmentC_Pin|SegmentF_Pin|SegmentDP_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOD, SegmentC_Pin|SegmentF_Pin, GPIO_PIN_RESET);
 			break;
 		case 3:
 			HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentD_Pin 
                           |SegmentG_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOD, SegmentE_Pin|SegmentF_Pin|SegmentDP_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOD, SegmentE_Pin|SegmentF_Pin, GPIO_PIN_RESET);
 			break;
 		case 4:
 			HAL_GPIO_WritePin(GPIOD, SegmentB_Pin|SegmentC_Pin|SegmentF_Pin|SegmentG_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentD_Pin 
-                          |SegmentE_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentD_Pin|SegmentE_Pin, GPIO_PIN_RESET);
 			break;
 		case 5:
 			HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentC_Pin|SegmentD_Pin 
                           |SegmentF_Pin|SegmentG_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOD, SegmentB_Pin|SegmentE_Pin|SegmentDP_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOD, SegmentB_Pin|SegmentE_Pin, GPIO_PIN_RESET);
 			break;
 		case 6:
 			HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentC_Pin|SegmentD_Pin 
                           |SegmentE_Pin|SegmentF_Pin|SegmentG_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOD, SegmentB_Pin|SegmentDP_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOD, SegmentB_Pin, GPIO_PIN_RESET);
 			break;
 		case 7:
 			HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentD_Pin, GPIO_PIN_SET);
@@ -187,21 +188,25 @@ void display_number(float num)
 		case 0:
 			HAL_GPIO_WritePin(GPIOE, Digit0_Pin, GPIO_PIN_RESET);
 			HAL_GPIO_WritePin(GPIOE, Digit1_Pin|Digit2_Pin|Digit3_Pin, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(GPIOD, SegmentDP_Pin, GPIO_PIN_RESET);
 			display_digit(current_display_mode);
 			break;
 		case 1:
 			HAL_GPIO_WritePin(GPIOE, Digit1_Pin, GPIO_PIN_RESET);
 			HAL_GPIO_WritePin(GPIOE, Digit0_Pin|Digit2_Pin|Digit3_Pin, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(GPIOD, SegmentDP_Pin, GPIO_PIN_SET); // Set decimal point
 			display_digit((int) num);
 			break;
 		case 2:
 			HAL_GPIO_WritePin(GPIOE, Digit2_Pin, GPIO_PIN_RESET);
 			HAL_GPIO_WritePin(GPIOE, Digit0_Pin|Digit1_Pin|Digit3_Pin, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(GPIOD, SegmentDP_Pin, GPIO_PIN_RESET);
 			display_digit(((int)(num * 10) % 10));
 			break;
 		case 3:
 			HAL_GPIO_WritePin(GPIOE, Digit3_Pin, GPIO_PIN_RESET);
 			HAL_GPIO_WritePin(GPIOE, Digit0_Pin|Digit1_Pin|Digit2_Pin, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(GPIOD, SegmentDP_Pin, GPIO_PIN_RESET);
 			display_digit(((int)(num * 100) % 10));
 			break;
 	}
@@ -248,7 +253,7 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-	HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq() / 50); // Set SysTick interrupt frequency to 50 Hz
+	HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq() / 200); // Set SysTick interrupt frequency to 200 Hz (5 ms)
 
   /* USER CODE END SysInit */
 
@@ -267,20 +272,32 @@ int main(void)
 		// Read the B1 button (PA0)
 		if(HAL_GPIO_ReadPin(Button_GPIO_Port, Button_Pin))  
 		{
-			//printf("Button pressed!\n");
+			// TODO: add debouncing
+			if (button_ticks == 0) {
+				current_display_mode = (current_display_mode + 1) % 3;
+				printf("Mode: %i\n", current_display_mode);
+				button_ticks = 1;
+			}
+			if (systick_flag == 1)
+			{
+				button_ticks = (button_ticks + 1) % 200;
+			}
+		} else {
+			button_ticks = 0;
 		}
 		
-		// Set the DAC voltage (PA4)
-		//set_DAC_value(1.5);
 		
-		// Read the ADC input (PA1)
-		//HAL_ADC_Start_IT(&hadc1);
 		
-		// Display on 7 segment display
-		HAL_GPIO_WritePin(GPIOE, Digit2_Pin|Digit3_Pin|Digit0_Pin|Digit1_Pin, GPIO_PIN_RESET);
-		for (int i = 0; i < 10; i++) {
-			display_digit(i);
-			HAL_Delay(50);
+		if (systick_flag == 1) {			
+			// Set the DAC voltage (PA4)
+			set_DAC_value(1.5);
+			
+			// Read the ADC input (PA1)
+			HAL_ADC_Start_IT(&hadc1);
+			
+			// Display on 7 segment display
+			display_number(ADC_value);
+			systick_flag = 0;
 		}
 		
 

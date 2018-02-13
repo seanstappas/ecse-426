@@ -166,15 +166,15 @@ void display_number(float num)
 			HAL_GPIO_WritePin(GPIOE, Digit1_Pin, GPIO_PIN_RESET);
 			HAL_GPIO_WritePin(GPIOE, Digit0_Pin|Digit2_Pin|Digit3_Pin, GPIO_PIN_SET);
 			display_digit((int) num);
-			break
+			break;
 		case 2:
 			HAL_GPIO_WritePin(GPIOE, Digit2_Pin, GPIO_PIN_RESET);
 			HAL_GPIO_WritePin(GPIOE, Digit0_Pin|Digit1_Pin|Digit3_Pin, GPIO_PIN_SET);
 			display_digit(((int)(num * 10) % 10));
 			break;
 		case 3:
-			HAL_GPIO_WritePin(GPIOE, Digit2_Pin, GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(GPIOE, Digit0_Pin|Digit1_Pin|Digit3_Pin, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(GPIOE, Digit3_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOE, Digit0_Pin|Digit1_Pin|Digit2_Pin, GPIO_PIN_SET);
 			display_digit(((int)(num * 100) % 10));
 			break;
 	}

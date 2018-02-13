@@ -84,13 +84,14 @@
 /* #define USE_FULL_ASSERT    1U */
 
 /* USER CODE BEGIN Private defines */
-
+#define V_REF 3
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
  extern "C" {
 #endif
 void _Error_Handler(char *, int);
+extern volatile int systick_flag;
 
 #define Error_Handler() _Error_Handler(__FILE__, __LINE__)
 #ifdef __cplusplus

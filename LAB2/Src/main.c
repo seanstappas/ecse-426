@@ -40,8 +40,6 @@
 #include "stm32f4xx_hal.h"
 
 /* USER CODE BEGIN Includes */
-// TODO: constants file
-#define V_REF 3
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -51,6 +49,9 @@ DAC_HandleTypeDef hdac;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
+volatile int systick_flag = 0;
+int current_display_digit = 0;
+int current_display_mode = 0;
 
 /* USER CODE END PV */
 
@@ -96,40 +97,6 @@ void set_DAC_value(float voltage)
 // Pins PD0 to PD7: Segments
 // Pins PE0 to PE3: Digits
 
-// Display RMS, MAX or MIN mode
-void display_mode(int mode)
-{
-	switch(mode) {
-		case 0:
-			break;
-		case 1:
-			break;
-		case 2:
-			break;
-		default:
-			break;
-	}
-}
-
-// display a 3 digit number
-void display_number(float num)
-{
-	
-}
-void display_all_on()
-{
-  HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentD_Pin 
-                          |SegmentE_Pin|SegmentF_Pin|SegmentG_Pin|SegmentDP_Pin, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(GPIOE, Digit2_Pin|Digit3_Pin|Digit0_Pin|Digit1_Pin, GPIO_PIN_RESET);
-}
-
-
-void display_all_off()
-{
-  HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentD_Pin 
-                          |SegmentE_Pin|SegmentF_Pin|SegmentG_Pin|SegmentDP_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(GPIOE, Digit2_Pin|Digit3_Pin|Digit0_Pin|Digit1_Pin, GPIO_PIN_RESET);
-}
 
 
 void display_digit(int digit)
@@ -184,6 +151,49 @@ void display_digit(int digit)
 			HAL_GPIO_WritePin(GPIOD, SegmentD_Pin|SegmentE_Pin|SegmentDP_Pin, GPIO_PIN_RESET);
 			break;
 	}
+}
+
+// display a 3 digit number
+void display_number(float num)
+{
+	switch(current_display_digit) {
+		case 0:
+			HAL_GPIO_WritePin(GPIOE, Digit0_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOE, Digit1_Pin|Digit2_Pin|Digit3_Pin, GPIO_PIN_SET);
+			display_digit(current_display_mode);
+			break;
+		case 1:
+			HAL_GPIO_WritePin(GPIOE, Digit1_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOE, Digit0_Pin|Digit2_Pin|Digit3_Pin, GPIO_PIN_SET);
+			display_digit((int) num);
+			break
+		case 2:
+			HAL_GPIO_WritePin(GPIOE, Digit2_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOE, Digit0_Pin|Digit1_Pin|Digit3_Pin, GPIO_PIN_SET);
+			display_digit(((int)(num * 10) % 10));
+			break;
+		case 3:
+			HAL_GPIO_WritePin(GPIOE, Digit2_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOE, Digit0_Pin|Digit1_Pin|Digit3_Pin, GPIO_PIN_SET);
+			display_digit(((int)(num * 100) % 10));
+			break;
+	}
+	current_display_digit = (current_display_digit + 1) % 4;
+}
+
+void display_all_on()
+{
+  HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentD_Pin 
+                          |SegmentE_Pin|SegmentF_Pin|SegmentG_Pin|SegmentDP_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOE, Digit2_Pin|Digit3_Pin|Digit0_Pin|Digit1_Pin, GPIO_PIN_RESET);
+}
+
+
+void display_all_off()
+{
+  HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentD_Pin 
+                          |SegmentE_Pin|SegmentF_Pin|SegmentG_Pin|SegmentDP_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOE, Digit2_Pin|Digit3_Pin|Digit0_Pin|Digit1_Pin, GPIO_PIN_RESET);
 }
 /* USER CODE END 0 */
 
@@ -240,10 +250,12 @@ int main(void)
 		//HAL_ADC_Start_IT(&hadc1);
 		
 		// Display on 7 segment display
-		display_all_on();
-		HAL_Delay(50);
-		display_all_off();
-		HAL_Delay(50);
+		HAL_GPIO_WritePin(GPIOE, Digit2_Pin|Digit3_Pin|Digit0_Pin|Digit1_Pin, GPIO_PIN_RESET);
+		for (int i = 0; i < 10; i++) {
+			display_digit(i);
+			HAL_Delay(50);
+		}
+		
 
   /* USER CODE END WHILE */
 

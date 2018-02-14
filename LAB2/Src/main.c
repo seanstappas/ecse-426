@@ -52,16 +52,20 @@ DAC_HandleTypeDef hdac;
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 volatile int systick_flag = 0;
+int systick_counter = 0;
 int current_display_digit = 0;
 int current_display_mode = 0;
-float runningMin = 5;
-float runningMax = 0;
+float running_min = 5;
+float running_max = 0;
 float ADC_value = 0.0;
 int button_ticks = 0;
 int button_debounce_delay = 10;
 uint32_t ADCReadings[1]; //ADC Readings
 float raw_data[10];
 float filtered_data[10];
+float rms_value;
+float max_value;
+float min_value;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -79,29 +83,23 @@ static void MX_DAC_Init(void);
 /* USER CODE BEGIN 0 */
 // Handle ADC input signal
 
-void compare(float* input_array, float* output_array, int array_length){
+void update_rms_and_running_max_min(){
 	// RMS
-	float rms;
-	arm_rms_f32(input_array, array_length, &rms);
+	arm_rms_f32(filtered_data, 10, &rms_value);
 	// MAX & INDEX
 	float32_t max;
 	uint32_t maxIndex;
-	arm_max_f32(input_array, array_length, &max, &maxIndex);
+	arm_max_f32(filtered_data, 10, &max, &maxIndex);
 	// MIN & INDEX
 	float32_t min;
 	uint32_t minIndex;
-	arm_min_f32(input_array, array_length, &min, &minIndex);
-	if(runningMax<max){
-		runningMax = max;
+	arm_min_f32(filtered_data, 10, &min, &minIndex);
+	if(running_max<max){
+		running_max = max;
 	}
-	if(runningMin>min){
-		runningMin = min;
+	if(running_min>min){
+		running_min = min;
 	}
-	output_array[0] = rms;
-	output_array[1] = runningMax;
-	output_array[2] = runningMin;
-	output_array[3] = maxIndex; 
-	output_array[4] = minIndex;
 }
 
 // Isolates for DOR in the following formula: DAC_OUTx = VREF+ * DOR / 4095.
@@ -123,7 +121,8 @@ void set_DAC_value(float voltage)
 
 void display_digit(int digit)
 {
-	switch(digit) {
+	switch(digit)
+	{
 		case 0:
 			HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentD_Pin 
                           |SegmentE_Pin|SegmentF_Pin, GPIO_PIN_SET);
@@ -177,7 +176,8 @@ void display_digit(int digit)
 // display a 3 digit number
 void display_number(float num)
 {
-	switch(current_display_digit) {
+	switch(current_display_digit)
+	{
 		case 0:
 			HAL_GPIO_WritePin(GPIOE, Digit0_Pin, GPIO_PIN_RESET);
 			HAL_GPIO_WritePin(GPIOE, Digit1_Pin|Digit2_Pin|Digit3_Pin, GPIO_PIN_SET);
@@ -206,6 +206,22 @@ void display_number(float num)
 	current_display_digit = (current_display_digit + 1) % 4;
 }
 
+void display_current_number()
+{
+	switch(current_display_mode)
+	{
+		case 0:
+			display_number(rms_value);
+			break;
+		case 1:
+			display_number(max_value);
+			break;
+		case 2:
+			display_number(min_value);
+			break;
+	}
+}
+
 void display_all_on()
 {
   HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentD_Pin 
@@ -219,6 +235,12 @@ void display_all_off()
   HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentD_Pin 
                           |SegmentE_Pin|SegmentF_Pin|SegmentG_Pin|SegmentDP_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(GPIOE, Digit2_Pin|Digit3_Pin|Digit0_Pin|Digit1_Pin, GPIO_PIN_RESET);
+}
+
+float FIR_filter()
+{
+	// TODO: Complete simple filter
+	return raw_data[0];
 }
 /* USER CODE END 0 */
 
@@ -280,10 +302,6 @@ int main(void)
 		{
 			button_ticks = 0;
 		}
-		if (systick_flag)
-		{
-			button_ticks++;
-		}
 		if(button_ticks > button_debounce_delay)
 		{
 			if (reading != button_state) {
@@ -298,16 +316,62 @@ int main(void)
 		}
 		last_button_state = reading;
 		
-		if (systick_flag) { // TODO: set to required sampling frequency (50 Hz)
+		// Every 5 ms
+		if (systick_flag)
+		{
 			// Set the DAC voltage (PA4)
 			set_DAC_value(1.5);
 			
-			// Read the ADC input (PA1)
-			//HAL_ADC_Start_IT(&hadc1);
-			
 			// Display on 7 segment display
-			display_number((ADCReadings[0] / 1023.0) * V_REF);
+			display_current_number();
+			
+			// Update counters
+			button_ticks++;
+			systick_counter = (systick_counter + 1) % 2000;
+			
+			// Reset flag
 			systick_flag = 0;
+		}
+		
+		// Every 20 ms
+		if (systick_counter % 4 == 0)
+		{
+			// Shift raw data array up
+			for (int i = 1; i < 10; i++)
+			{
+				raw_data[i] = raw_data[i - 1];
+			}
+			
+			// Sample raw ADC data
+			raw_data[0] = (ADCReadings[0] / 1023.0) * V_REF;
+			
+			// Shift filtered data array up
+			for (int i = 1; i < 10; i++)
+			{
+				filtered_data[i] = filtered_data[i - 1];
+			}
+			
+			// Update filtered data
+			filtered_data[0] = FIR_filter();
+		}
+		
+		// Every 200 ms
+		if (systick_counter % 40 == 0)
+		{
+			// Update RMS value and running MAX and running MIN
+			update_rms_and_running_max_min();
+		}
+		
+		// Every 10 s
+		if (systick_counter == 0)
+		{
+			// Update MAX and MIN values
+			max_value = running_max;
+			min_value = running_min;
+			
+			// Reset running MIN and MAX values
+			running_max = 0;
+			running_min = 5;
 		}
 		
 

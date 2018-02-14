@@ -57,6 +57,7 @@ float runningMin = 5;
 float runningMax = 0;
 float ADC_value = 0.0;
 int button_ticks = 0;
+int button_debounce_delay = 10;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -263,32 +264,40 @@ int main(void)
   MX_DAC_Init();
   /* USER CODE BEGIN 2 */
 	HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
+	GPIO_PinState last_button_state = GPIO_PIN_RESET;
+	GPIO_PinState button_state = GPIO_PIN_RESET;
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-		// Read the B1 button (PA0)
-		if(HAL_GPIO_ReadPin(Button_GPIO_Port, Button_Pin))  
+		// Read the B1 button (PA0) with debouncing
+		// Debounce inspired from https://www.arduino.cc/en/Tutorial/Debounce
+		GPIO_PinState reading = HAL_GPIO_ReadPin(Button_GPIO_Port, Button_Pin);
+		if(reading != last_button_state)
 		{
-			// TODO: add debouncing
-			if (button_ticks == 0) {
-				current_display_mode = (current_display_mode + 1) % 3;
-				printf("Mode: %i\n", current_display_mode);
-				button_ticks = 1;
-			}
-			if (systick_flag == 1)
-			{
-				button_ticks = (button_ticks + 1) % 200;
-			}
-		} else {
 			button_ticks = 0;
 		}
+		if (systick_flag)
+		{
+			button_ticks++;
+		}
+		if(button_ticks > button_debounce_delay)
+		{
+			if (reading != button_state) {
+				button_state = reading;
+				
+				if (button_state)
+				{
+					current_display_mode = (current_display_mode + 1) % 3;
+					printf("Mode: %i\n", current_display_mode);
+				}
+			}
+		}
+		last_button_state = reading;
 		
-		
-		
-		if (systick_flag == 1) {			
+		if (systick_flag) {
 			// Set the DAC voltage (PA4)
 			set_DAC_value(1.5);
 			

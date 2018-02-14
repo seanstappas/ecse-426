@@ -60,6 +60,8 @@ float ADC_value = 0.0;
 int button_ticks = 0;
 int button_debounce_delay = 10;
 uint32_t ADCReadings[1]; //ADC Readings
+float raw_data[10];
+float filtered_data[10];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -95,21 +97,11 @@ void compare(float* input_array, float* output_array, int array_length){
 	if(runningMin>min){
 		runningMin = min;
 	}
-			output_array[0] = rms;
-			output_array[1] = runningMax;
-			output_array[2] = runningMin;
-			output_array[3] = maxIndex; 
-			output_array[4] = minIndex;
-}
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
-{
-	if (__HAL_ADC_GET_FLAG(hadc, ADC_FLAG_EOC))
-	{
-		unsigned ADC_raw = HAL_ADC_GetValue(hadc);
-		//printf("Raw ADC value: %u\n", ADC_raw);
-		//printf("ADC input: %f V\n", (ADC_raw / 1023.0) * V_REF);
-		ADC_value = (ADC_raw / 1023.0) * V_REF;
-	}
+	output_array[0] = rms;
+	output_array[1] = runningMax;
+	output_array[2] = runningMin;
+	output_array[3] = maxIndex; 
+	output_array[4] = minIndex;
 }
 
 // Isolates for DOR in the following formula: DAC_OUTx = VREF+ * DOR / 4095.
@@ -121,10 +113,7 @@ uint32_t voltage_to_ADC_DOR(float voltage)
 void set_DAC_value(float voltage)
 {
 	uint32_t converted_DAC_value = voltage_to_ADC_DOR(voltage);
-	//printf("Converted DAC value: %u\n", converted_DAC_value);
 	HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, converted_DAC_value);
-	//printf("DAC output: %f V\n", V_REF * converted_DAC_value / 4095.0);
-	//printf("Last DAC value: %u\n", HAL_DAC_GetValue(&hdac, DAC_CHANNEL_1));
 }
 
 // 7-Segment Display
@@ -241,7 +230,6 @@ void display_all_off()
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/
@@ -250,7 +238,6 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -270,10 +257,12 @@ int main(void)
 	HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
 	if (HAL_ADC_Start(&hadc1) != HAL_OK)
 	{
+		printf("HAL ADC failed.\n");
 		return 0;
 	}
 	if (HAL_ADC_Start_DMA(&hadc1, ADCReadings, 1) != HAL_OK)
 	{
+		printf("HAL ADC DMA failed.\n");
 		return 0;
 	}
 	GPIO_PinState last_button_state = GPIO_PIN_RESET;
@@ -400,7 +389,7 @@ static void MX_ADC1_Init(void)
   hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
   hadc1.Init.Resolution = ADC_RESOLUTION_10B;
   hadc1.Init.ScanConvMode = DISABLE;
-  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.ContinuousConvMode = ENABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
@@ -417,7 +406,7 @@ static void MX_ADC1_Init(void)
     */
   sConfig.Channel = ADC_CHANNEL_1;
   sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_84CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);

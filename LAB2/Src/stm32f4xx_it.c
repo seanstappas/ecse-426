@@ -34,13 +34,14 @@
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx.h"
 #include "stm32f4xx_it.h"
-#include "main.h"
 
 /* USER CODE BEGIN 0 */
+#include "main.h"
 
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
+extern DMA_HandleTypeDef hdma_adc1;
 extern ADC_HandleTypeDef hadc1;
 
 /******************************************************************************/
@@ -205,6 +206,20 @@ void ADC_IRQHandler(void)
   /* USER CODE BEGIN ADC_IRQn 1 */
 
   /* USER CODE END ADC_IRQn 1 */
+}
+
+/**
+* @brief This function handles DMA2 stream0 global interrupt.
+*/
+void DMA2_Stream0_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA2_Stream0_IRQn 0 */
+
+  /* USER CODE END DMA2_Stream0_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_adc1);
+  /* USER CODE BEGIN DMA2_Stream0_IRQn 1 */
+
+  /* USER CODE END DMA2_Stream0_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */

@@ -38,13 +38,14 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f4xx_hal.h"
-#include "arm_math.h"
 
 /* USER CODE BEGIN Includes */
+#include "arm_math.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
+DMA_HandleTypeDef hdma_adc1;
 
 DAC_HandleTypeDef hdac;
 
@@ -58,11 +59,13 @@ float runningMax = 0;
 float ADC_value = 0.0;
 int button_ticks = 0;
 int button_debounce_delay = 10;
+uint32_t ADCReadings[1]; //ADC Readings
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_DAC_Init(void);
 
@@ -260,10 +263,19 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_ADC1_Init();
   MX_DAC_Init();
   /* USER CODE BEGIN 2 */
 	HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
+	if (HAL_ADC_Start(&hadc1) != HAL_OK)
+	{
+		return 0;
+	}
+	if (HAL_ADC_Start_DMA(&hadc1, ADCReadings, 1) != HAL_OK)
+	{
+		return 0;
+	}
 	GPIO_PinState last_button_state = GPIO_PIN_RESET;
 	GPIO_PinState button_state = GPIO_PIN_RESET;
   /* USER CODE END 2 */
@@ -297,15 +309,15 @@ int main(void)
 		}
 		last_button_state = reading;
 		
-		if (systick_flag) {
+		if (systick_flag) { // TODO: set to required sampling frequency (50 Hz)
 			// Set the DAC voltage (PA4)
 			set_DAC_value(1.5);
 			
 			// Read the ADC input (PA1)
-			HAL_ADC_Start_IT(&hadc1);
+			//HAL_ADC_Start_IT(&hadc1);
 			
 			// Display on 7 segment display
-			display_number(ADC_value);
+			display_number((ADCReadings[0] / 1023.0) * V_REF);
 			systick_flag = 0;
 		}
 		
@@ -394,7 +406,7 @@ static void MX_ADC1_Init(void)
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc1.Init.NbrOfConversion = 1;
-  hadc1.Init.DMAContinuousRequests = DISABLE;
+  hadc1.Init.DMAContinuousRequests = ENABLE;
   hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
   {
@@ -435,6 +447,21 @@ static void MX_DAC_Init(void)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
+
+}
+
+/** 
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void) 
+{
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA2_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA2_Stream0_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
 
 }
 

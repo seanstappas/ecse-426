@@ -81,8 +81,10 @@ static void MX_DAC_Init(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
-// Handle ADC input signal
-
+/**
+  * @brief  Updates the RMS, running MAX and running MIN based on the filtered data array.
+  * @retval None
+  */
 void update_rms_and_running_max_min(){
 	// RMS
 	arm_rms_f32(filtered_data, 10, &rms_value);
@@ -102,15 +104,24 @@ void update_rms_and_running_max_min(){
 	}
 }
 
-// Isolates for DOR in the following formula: DAC_OUTx = VREF+ * DOR / 4095.
-uint32_t voltage_to_ADC_DOR(float voltage)
+/**
+  * @brief  Isolates for DOR in the following formula: DAC_OUTx = VREF+ * DOR / 4095.
+  * @param  voltage: The voltage to be converted.
+  * @retval The analog voltage converted to digital number.
+  */
+uint32_t voltage_to_DAC_DOR(float voltage)
 {
 	return (uint32_t)((voltage * 4095) / V_REF);
 }
 
+/**
+  * @brief  Sets the DAC port to the desired voltage value.
+  * @param  voltage: The voltage to set the DAC port to.
+  * @retval None
+  */
 void set_DAC_value(float voltage)
 {
-	uint32_t converted_DAC_value = voltage_to_ADC_DOR(voltage);
+	uint32_t converted_DAC_value = voltage_to_DAC_DOR(voltage);
 	HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, converted_DAC_value);
 }
 
@@ -118,7 +129,11 @@ void set_DAC_value(float voltage)
 // Pins PD0 to PD7: Segments
 // Pins PE0 to PE3: Digits
 
-
+/**
+  * @brief  Activate the required segments to display the desired digit.
+  * @param  digit: The digit to display.
+  * @retval None
+  */
 void display_digit(int digit)
 {
 	switch(digit)
@@ -173,7 +188,11 @@ void display_digit(int digit)
 	}
 }
 
-// display a 3 digit number
+/**
+  * @brief  Displays a 3-digit number (ranging from 0.00 to 9.99) on the 7 segment display.
+  * @param  num: The number to display.
+  * @retval None
+  */
 void display_number(float num)
 {
 	switch(current_display_digit)
@@ -206,37 +225,33 @@ void display_number(float num)
 	current_display_digit = (current_display_digit + 1) % 4;
 }
 
+/**
+  * @brief  Displays either the RMS, MAX or MIN value depending on the current mode.
+  * @retval None
+  */
 void display_current_number()
 {
 	switch(current_display_mode)
 	{
 		case 0:
+			// Display RMS value
 			display_number(rms_value);
 			break;
 		case 1:
+			// Display MAX value
 			display_number(max_value);
 			break;
 		case 2:
+			// Display MIN value
 			display_number(min_value);
 			break;
 	}
 }
 
-void display_all_on()
-{
-  HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentD_Pin 
-                          |SegmentE_Pin|SegmentF_Pin|SegmentG_Pin|SegmentDP_Pin, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(GPIOE, Digit2_Pin|Digit3_Pin|Digit0_Pin|Digit1_Pin, GPIO_PIN_RESET);
-}
-
-
-void display_all_off()
-{
-  HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentD_Pin 
-                          |SegmentE_Pin|SegmentF_Pin|SegmentG_Pin|SegmentDP_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(GPIOE, Digit2_Pin|Digit3_Pin|Digit0_Pin|Digit1_Pin, GPIO_PIN_RESET);
-}
-
+/**
+  * @brief  Processes the raw ADC data with an FIR filter, returning the filtered value.
+  * @retval The filtered value based on the previous ADC readings.
+  */
 float FIR_filter()
 {
 	// TODO: Complete simple filter

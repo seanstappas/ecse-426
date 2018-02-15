@@ -66,6 +66,17 @@ float filtered_data[10];
 float rms_value;
 float max_value;
 float min_value;
+float fir_coeff[10] = {
+	-0.0490319314416,
+	-0.0698589404353,
+	0.0145608566286,
+	0.213556898362,
+	0.390773116886,
+	0.390773116886,
+	0.213556898362,
+	0.0145608566286,
+	-0.0698589404353,
+	-0.0490319314416};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -77,7 +88,13 @@ static void MX_DAC_Init(void);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
-
+void update_rms_and_running_max_min(void);
+uint32_t voltage_to_DAC_DOR(float voltage);
+void set_DAC_value(float voltage);
+void display_digit(int digit);
+void display_number(float num);
+void display_current_number(void);
+float fir_filter(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -85,7 +102,7 @@ static void MX_DAC_Init(void);
   * @brief  Updates the RMS, running MAX and running MIN based on the filtered data array.
   * @retval None
   */
-void update_rms_and_running_max_min(){
+void update_rms_and_running_max_min(void){
 	// RMS
 	arm_rms_f32(filtered_data, 10, &rms_value);
 	// MAX & INDEX
@@ -229,7 +246,7 @@ void display_number(float num)
   * @brief  Displays either the RMS, MAX or MIN value depending on the current mode.
   * @retval None
   */
-void display_current_number()
+void display_current_number(void)
 {
 	switch(current_display_mode)
 	{
@@ -252,15 +269,12 @@ void display_current_number()
   * @brief  Processes the raw ADC data with an FIR filter, returning the filtered value.
   * @retval The filtered value based on the previous ADC readings.
   */
-float FIR_filter()
+float fir_filter(void)
 {
-	// TODO: Complete simple filter
-	float coeff[10] = {1,1,1,1,1,1,1,1,1,1};
 	int order = 10;
-	float output = 0;
 	float sum = 0;
 	for(int i = 0; i<order;i++){
-		sum+=coeff[i]*raw_data[i];
+		sum+=fir_coeff[i]*raw_data[i];
 	}
 	return sum;
 }
@@ -311,6 +325,7 @@ int main(void)
 	}
 	GPIO_PinState last_button_state = GPIO_PIN_RESET;
 	GPIO_PinState button_state = GPIO_PIN_RESET;
+	set_DAC_value(1.5); // Set the DAC voltage (PA4)
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -341,9 +356,6 @@ int main(void)
 		// Every 5 ms
 		if (systick_flag)
 		{
-			// Set the DAC voltage (PA4)
-			set_DAC_value(1.5);
-			
 			// Display on 7 segment display
 			display_current_number();
 			
@@ -374,7 +386,7 @@ int main(void)
 			}
 			
 			// Update filtered data
-			filtered_data[0] = FIR_filter();
+			filtered_data[0] = fir_filter();
 		}
 		
 		// Every 200 ms

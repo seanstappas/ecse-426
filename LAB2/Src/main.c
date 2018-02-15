@@ -240,7 +240,14 @@ void display_all_off()
 float FIR_filter()
 {
 	// TODO: Complete simple filter
-	return raw_data[0];
+	float coeff[10] = {1,1,1,1,1,1,1,1,1,1};
+	int order = 10;
+	float output = 0;
+	float sum = 0;
+	for(int i = 0; i<order;i++){
+		sum+=coeff[i]*raw_data[i];
+	}
+	return sum;
 }
 /* USER CODE END 0 */
 

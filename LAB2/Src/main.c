@@ -365,47 +365,47 @@ int main(void)
 			
 			// Reset flag
 			systick_flag = 0;
-		}
-		
-		// Every 20 ms
-		if (systick_counter % 4 == 0)
-		{
-			// Shift raw data array up
-			for (int i = 1; i < 10; i++)
+			
+			// Every 20 ms
+			if (systick_counter % 4 == 0)
 			{
-				raw_data[i] = raw_data[i - 1];
+				// Shift raw data array up
+				for (int i = 1; i < 10; i++)
+				{
+					raw_data[i] = raw_data[i - 1];
+				}
+				
+				// Sample raw ADC data
+				raw_data[0] = (adc_readings[0] / 1023.0) * V_REF;
+				
+				// Shift filtered data array up
+				for (int i = 1; i < 10; i++)
+				{
+					filtered_data[i] = filtered_data[i - 1];
+				}
+				
+				// Update filtered data
+				filtered_data[0] = fir_filter();
 			}
 			
-			// Sample raw ADC data
-			raw_data[0] = (adc_readings[0] / 1023.0) * V_REF;
-			
-			// Shift filtered data array up
-			for (int i = 1; i < 10; i++)
+			// Every 200 ms
+			if (systick_counter % 40 == 0)
 			{
-				filtered_data[i] = filtered_data[i - 1];
+				// Update RMS value and running MAX and running MIN
+				update_rms_and_running_max_min();
 			}
 			
-			// Update filtered data
-			filtered_data[0] = fir_filter();
-		}
-		
-		// Every 200 ms
-		if (systick_counter % 40 == 0)
-		{
-			// Update RMS value and running MAX and running MIN
-			update_rms_and_running_max_min();
-		}
-		
-		// Every 10 s
-		if (systick_counter == 0)
-		{
-			// Update MAX and MIN values
-			max_value = running_max;
-			min_value = running_min;
-			
-			// Reset running MIN and MAX values
-			running_max = 0;
-			running_min = 5;
+			// Every 10 s
+			if (systick_counter == 0)
+			{
+				// Update MAX and MIN values
+				max_value = running_max;
+				min_value = running_min;
+				
+				// Reset running MIN and MAX values
+				running_max = 0;
+				running_min = 5;
+			}
 		}
 		
 

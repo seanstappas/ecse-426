@@ -57,10 +57,10 @@ int current_display_digit = 0;
 int current_display_mode = 0;
 float running_min = 5;
 float running_max = 0;
-float ADC_value = 0.0;
+float adc_value = 0.0;
 int button_ticks = 0;
 int button_debounce_delay = 10;
-uint32_t ADCReadings[1]; //ADC Readings
+uint32_t adc_readings[1];
 float raw_data[10];
 float filtered_data[10];
 float rms_value;
@@ -297,7 +297,7 @@ int main(void)
 		printf("HAL ADC failed.\n");
 		return 0;
 	}
-	if (HAL_ADC_Start_DMA(&hadc1, ADCReadings, 1) != HAL_OK)
+	if (HAL_ADC_Start_DMA(&hadc1, adc_readings, 1) != HAL_OK)
 	{
 		printf("HAL ADC DMA failed.\n");
 		return 0;
@@ -358,7 +358,7 @@ int main(void)
 			}
 			
 			// Sample raw ADC data
-			raw_data[0] = (ADCReadings[0] / 1023.0) * V_REF;
+			raw_data[0] = (adc_readings[0] / 1023.0) * V_REF;
 			
 			// Shift filtered data array up
 			for (int i = 1; i < 10; i++)

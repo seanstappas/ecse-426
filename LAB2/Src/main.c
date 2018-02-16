@@ -347,7 +347,6 @@ int main(void)
 				if (button_state)
 				{
 					current_display_mode = (current_display_mode + 1) % 3;
-					printf("Mode: %i\n", current_display_mode);
 				}
 			}
 		}

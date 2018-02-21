@@ -77,6 +77,14 @@ float fir_coeff[10] = {
 	0.0145608566286,
 	-0.0698589404353,
 	-0.0490319314416};
+
+// keypad variables
+	const char keypad [4][3] = {
+	{'1', '2', '3'},
+	{'4', '5', '6'},
+	{'7', '8', '9'},
+	{'*', '0', '#'}
+};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -95,6 +103,9 @@ void display_digit(int digit);
 void display_number(float num);
 void display_current_number(void);
 float fir_filter(void);
+int read_row();
+int read_col();
+char get_key();
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -278,6 +289,100 @@ float fir_filter(void)
 	}
 	return sum;
 }
+/**
+	*@brief Obtain row of pressed key
+	*@return -1 if none, or index of row of pressed key
+	**/
+int read_row(){
+	GPIO_InitTypeDef GPIO_InitStruct;
+	
+	//columns as input and high COL1, COL2, COL3
+	GPIO_InitStruct.Pin = COL1_Pin|COL2_Pin|COL3_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
+	HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+	HAL_GPIO_WritePin(GPIOE, COL1_Pin|COL2_Pin|COL3_Pin, GPIO_PIN_SET);
+	
+	// rows as inputs ROW1, ROW2, ROW3, ROW4
+	GPIO_InitStruct.Pin = ROW1_Pin|ROW2_Pin|ROW3_Pin|ROW4_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+	GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
+	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+	
+	int row = -1;
+	
+	if(HAL_GPIO_ReadPin(GPIOB, ROW1_Pin) == GPIO_PIN_SET){
+		row = 1;
+	} else if (HAL_GPIO_ReadPin(GPIOB, ROW2_Pin) == GPIO_PIN_SET){
+		row = 2;
+	} else if (HAL_GPIO_ReadPin(GPIOB, ROW3_Pin) == GPIO_PIN_SET){
+		row = 3;
+	} else if (HAL_GPIO_ReadPin(GPIOB, ROW4_Pin) == GPIO_PIN_SET){
+		row = 4;
+	}
+	
+	HAL_GPIO_WritePin(GPIOE, COL1_Pin|COL2_Pin|COL3_Pin, GPIO_PIN_RESET);
+	return row;
+}
+
+/**
+	*@brief Obtain column of pressed key
+	*@return -1 if none, or index of column of pressed key
+	**/
+
+int read_col(){
+	GPIO_InitTypeDef GPIO_InitStruct;
+	
+	//rows as output and high ROW1, ROW2, ROW3, ROW4
+	GPIO_InitStruct.Pin = ROW1_Pin|ROW2_Pin|ROW3_Pin|ROW4_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
+	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+	HAL_GPIO_WritePin(GPIOB, ROW1_Pin|ROW2_Pin|ROW3_Pin|ROW4_Pin, GPIO_PIN_SET); //COL1_Pin|COL2_Pin|COL3_Pin
+	
+	// columns as input COL1, COL2, COL3
+	GPIO_InitStruct.Pin = COL1_Pin|COL2_Pin|COL3_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+	GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
+	HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+	
+	//read the column
+	int col = -1;
+	
+	if(HAL_GPIO_ReadPin(GPIOE, COL1_Pin) == GPIO_PIN_SET){
+		col = 1;
+		printf("column 1 pressed");
+	} else if(HAL_GPIO_ReadPin(GPIOE, COL2_Pin) == GPIO_PIN_SET){
+		col = 2;
+	} else if(HAL_GPIO_ReadPin(GPIOE, COL3_Pin) == GPIO_PIN_SET){
+		col = 3;
+	}
+	
+	HAL_GPIO_WritePin(GPIOB, ROW1_Pin|ROW2_Pin|ROW3_Pin|ROW4_Pin, GPIO_PIN_RESET);
+	return col;
+}
+
+/**
+	*@brief Obtain character from key press
+	*@return char of pressed key or null ('\0') if none
+	**/
+char get_key(){
+	char key;
+	int row, col;
+	row = read_row();
+	col = read_col();
+	
+	if(row == -1 || col == -1){
+		key = '\0'; //no key pressed
+	} else {
+		key = keypad[row-1][col-1];
+	}
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -332,6 +437,9 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+		//read pressed key
+		char key = get_key();
+		
 		// Read the B1 button (PA0) with debouncing
 		// Debounce inspired from https://www.arduino.cc/en/Tutorial/Debounce
 		GPIO_PinState reading = HAL_GPIO_ReadPin(Button_GPIO_Port, Button_Pin);
@@ -570,14 +678,17 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, Digit2_Pin|Digit3_Pin|Digit0_Pin|Digit1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOE, Digit2_Pin|Digit3_Pin|ROW1_Pin|ROW2_Pin 
+                          |ROW3_Pin|ROW4_Pin|Digit0_Pin|Digit1_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentD_Pin 
                           |SegmentE_Pin|SegmentF_Pin|SegmentG_Pin|SegmentDP_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : Digit2_Pin Digit3_Pin Digit0_Pin Digit1_Pin */
-  GPIO_InitStruct.Pin = Digit2_Pin|Digit3_Pin|Digit0_Pin|Digit1_Pin;
+  /*Configure GPIO pins : Digit2_Pin Digit3_Pin ROW1_Pin ROW2_Pin 
+                           ROW3_Pin ROW4_Pin Digit0_Pin Digit1_Pin */
+  GPIO_InitStruct.Pin = Digit2_Pin|Digit3_Pin|ROW1_Pin|ROW2_Pin 
+                          |ROW3_Pin|ROW4_Pin|Digit0_Pin|Digit1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -588,6 +699,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(Button_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : COL1_Pin COL2_Pin COL3_Pin */
+  GPIO_InitStruct.Pin = COL1_Pin|COL2_Pin|COL3_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pins : SegmentA_Pin SegmentB_Pin SegmentC_Pin SegmentD_Pin 
                            SegmentE_Pin SegmentF_Pin SegmentG_Pin SegmentDP_Pin */

@@ -51,6 +51,15 @@ DAC_HandleTypeDef hdac;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
+static const char keypad [4][3] = {
+	{'1', '2', '3'},
+	{'4', '5', '6'},
+	{'7', '8', '9'},
+	{'*', '0', '#'}
+};
+static const int INPUT_PHASE = 0;
+static const int DISPLAY_PHASE = 1;
+static const int SLEEP_PHASE = 2;
 volatile int systick_flag = 0;
 int systick_counter = 0;
 int current_display_digit = 0;
@@ -77,15 +86,11 @@ float fir_coeff[10] = {
 	0.0145608566286,
 	-0.0698589404353,
 	-0.0490319314416};
-int current_phase = 0;
-
-// keypad variables
-const char keypad [4][3] = {
-	{'1', '2', '3'},
-	{'4', '5', '6'},
-	{'7', '8', '9'},
-	{'*', '0', '#'}
-};
+int current_keypad_phase = INPUT_PHASE;
+char last_pressed_key = 0;
+int keypad_counter = 0;
+int voltage_digits[2];
+int current_input_digit = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -262,20 +267,23 @@ void display_number(float num)
   */
 void display_current_number(void)
 {
-	switch(current_display_mode)
+	if (current_keypad_phase == DISPLAY_PHASE)
 	{
-		case 0:
-			// Display RMS value
-			display_number(rms_value);
-			break;
-		case 1:
-			// Display MAX value
-			display_number(max_value);
-			break;
-		case 2:
-			// Display MIN value
-			display_number(min_value);
-			break;
+		switch(current_display_mode)
+		{
+			case 0:
+				// Display RMS value
+				display_number(rms_value);
+				break;
+			case 1:
+				// Display MAX value
+				display_number(max_value);
+				break;
+			case 2:
+				// Display MIN value
+				display_number(min_value);
+				break;
+		}
 	}
 }
 
@@ -419,9 +427,6 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-		//read pressed key
-		//char key = get_key();
-		
 		// Read the B1 button (PA0) with debouncing
 		// Debounce inspired from https://www.arduino.cc/en/Tutorial/Debounce
 		GPIO_PinState reading = HAL_GPIO_ReadPin(Button_GPIO_Port, Button_Pin);
@@ -459,7 +464,71 @@ int main(void)
 			if (systick_counter % 4 == 0)
 			{
 				update_raw_and_filtered_data();
-				printf("Pressed key: %c\n", read_keypad());
+				
+				// Keypad
+				char pressed_key = read_keypad();
+				//printf("Last pressed key: %c\n", last_pressed_key);
+				if (pressed_key != 0)
+				{
+					if (pressed_key == last_pressed_key)
+					{
+						keypad_counter++;
+						// Press for 3 s
+						if (keypad_counter >= 150 && pressed_key == '*')
+						{
+							current_keypad_phase = SLEEP_PHASE;
+							printf("Entering SLEEP phase!\n");
+							keypad_counter = 0;
+						}
+					}
+					else
+					{
+						keypad_counter = 0;
+					}
+				}
+				else
+				{
+					if (last_pressed_key != 0)
+					{
+						if (last_pressed_key == '*')
+						{
+							// Press for >= 1 s
+							if (keypad_counter >= 50)
+							{
+								current_keypad_phase = INPUT_PHASE;
+								printf("Entering INPUT phase!\n");
+							}
+							else
+							{
+								// Delete last digit
+								if (current_input_digit == 1)
+								{
+									current_input_digit = 0;
+									voltage_digits[1] = 0;
+								}
+								else
+								{
+									voltage_digits[0] = 0;
+								}
+								printf("Deleted. New voltage: %i.%i V\n", voltage_digits[0],  voltage_digits[1]);
+							}
+						}
+						else if (current_keypad_phase == INPUT_PHASE && last_pressed_key == '#')
+						{
+							current_keypad_phase = DISPLAY_PHASE;
+							printf("Entering DISPLAY phase.\n");
+						}
+						else if (last_pressed_key != '*' && last_pressed_key != '#')
+						{
+							printf("User input.\n");
+							//voltage_digits[current_input_digit] = last_pressed_key - '0';
+							//current_input_digit = (current_input_digit + 1) % 2;
+							//printf("User input. New voltage: %i.%i V\n", voltage_digits[0],  voltage_digits[1]);
+						}
+					}
+					keypad_counter = 0;
+				}
+				last_pressed_key = pressed_key;
 			}
 			
 			// Every 200 ms

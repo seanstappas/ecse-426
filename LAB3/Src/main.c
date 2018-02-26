@@ -348,22 +348,16 @@ char read_keypad(void)
 				HAL_GPIO_WritePin(GPIOE, ROW0_Pin|ROW1_Pin|ROW2_Pin, GPIO_PIN_RESET);
 				break;
 		}
-		if (HAL_GPIO_ReadPin(GPIOE, COL0_Pin))
+		if (HAL_GPIO_ReadPin(GPIOE, COL1_Pin))
 		{
-			printf("Col: 0\n");
-			printf("Row: %i\n", row);
-			return keypad[row][0];
-		}
-		else if (HAL_GPIO_ReadPin(GPIOE, COL1_Pin))
-		{
-			printf("Col: 1\n");
-			printf("Row: %i\n", row);
 			return keypad[row][1];
+		}
+		else if (HAL_GPIO_ReadPin(GPIOE, COL0_Pin))
+		{
+			return keypad[row][0];
 		}
 		else if (HAL_GPIO_ReadPin(GPIOE, COL2_Pin))
 		{
-			printf("Col: 2\n");
-			printf("Row: %i\n", row);
 			return keypad[row][2];
 		}
 	}
@@ -668,14 +662,14 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pins : COL0_Pin COL1_Pin COL2_Pin */
   GPIO_InitStruct.Pin = COL0_Pin|COL1_Pin|COL2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pins : ROW0_Pin ROW1_Pin ROW2_Pin ROW3_Pin */
   GPIO_InitStruct.Pin = ROW0_Pin|ROW1_Pin|ROW2_Pin|ROW3_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pins : SegmentA_Pin SegmentB_Pin SegmentC_Pin SegmentD_Pin 

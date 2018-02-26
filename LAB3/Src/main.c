@@ -459,6 +459,7 @@ int main(void)
 			if (systick_counter % 4 == 0)
 			{
 				update_raw_and_filtered_data();
+				printf("Pressed key: %c\n", read_keypad());
 			}
 			
 			// Every 200 ms
@@ -466,7 +467,6 @@ int main(void)
 			{
 				// Update RMS value and running MAX and running MIN
 				update_rms_and_running_max_min();
-				printf("Pressed key: %c\n", read_keypad());
 			}
 			
 			// Every 10 s

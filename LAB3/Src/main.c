@@ -77,9 +77,10 @@ float fir_coeff[10] = {
 	0.0145608566286,
 	-0.0698589404353,
 	-0.0490319314416};
+int current_phase = 0;
 
 // keypad variables
-	const char keypad [4][3] = {
+const char keypad [4][3] = {
 	{'1', '2', '3'},
 	{'4', '5', '6'},
 	{'7', '8', '9'},
@@ -103,9 +104,11 @@ void display_digit(int digit);
 void display_number(float num);
 void display_current_number(void);
 float fir_filter(void);
-int read_row();
-int read_col();
-char get_key();
+int read_row(void);
+int read_col(void);
+char get_key(void);
+void update_raw_and_filtered_data(void);
+void update_max_and_min(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -289,10 +292,83 @@ float fir_filter(void)
 	}
 	return sum;
 }
-/**
-	*@brief Obtain row of pressed key
-	*@return -1 if none, or index of row of pressed key
-	**/
+
+void update_raw_and_filtered_data(void)
+{	
+	// Shift raw data array up
+	for (int i = 1; i < 10; i++)
+	{
+		raw_data[i] = raw_data[i - 1];
+	}
+	
+	// Sample raw ADC data
+	raw_data[0] = (adc_readings[0] / 1023.0) * V_REF;
+	
+	// Shift filtered data array up
+	for (int i = 1; i < 10; i++)
+	{
+		filtered_data[i] = filtered_data[i - 1];
+	}
+	
+	// Update filtered data
+	filtered_data[0] = fir_filter();
+}
+
+void update_max_and_min(void)
+{
+	// Update MAX and MIN values
+	max_value = running_max;
+	min_value = running_min;
+	
+	// Reset running MIN and MAX values
+	running_max = 0;
+	running_min = 5;
+}
+
+char read_keypad(void)
+{
+	for (int row = 0; row < 4; row++)
+	{
+		switch(row)
+		{
+			case 0:
+				HAL_GPIO_WritePin(GPIOE, ROW0_Pin, GPIO_PIN_SET);
+				HAL_GPIO_WritePin(GPIOE, ROW1_Pin|ROW2_Pin|ROW3_Pin, GPIO_PIN_RESET);
+				break;
+			case 1:
+				HAL_GPIO_WritePin(GPIOE, ROW1_Pin, GPIO_PIN_SET);
+				HAL_GPIO_WritePin(GPIOE, ROW0_Pin|ROW2_Pin|ROW3_Pin, GPIO_PIN_RESET);
+				break;
+			case 2:
+				HAL_GPIO_WritePin(GPIOE, ROW2_Pin, GPIO_PIN_SET);
+				HAL_GPIO_WritePin(GPIOE, ROW0_Pin|ROW1_Pin|ROW3_Pin, GPIO_PIN_RESET);
+				break;
+			case 3:
+				HAL_GPIO_WritePin(GPIOE, ROW3_Pin, GPIO_PIN_SET);
+				HAL_GPIO_WritePin(GPIOE, ROW0_Pin|ROW1_Pin|ROW2_Pin, GPIO_PIN_RESET);
+				break;
+		}
+		if (HAL_GPIO_ReadPin(GPIOE, COL0_Pin))
+		{
+			printf("Col: 0\n");
+			printf("Row: %i\n", row);
+			return keypad[row][0];
+		}
+		else if (HAL_GPIO_ReadPin(GPIOE, COL1_Pin))
+		{
+			printf("Col: 1\n");
+			printf("Row: %i\n", row);
+			return keypad[row][1];
+		}
+		else if (HAL_GPIO_ReadPin(GPIOE, COL2_Pin))
+		{
+			printf("Col: 2\n");
+			printf("Row: %i\n", row);
+			return keypad[row][2];
+		}
+	}
+	return 0;
+}
 
 /* USER CODE END 0 */
 
@@ -320,7 +396,7 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+	HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq() / 200); // Set SysTick interrupt frequency to 200 Hz (5 ms)
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -350,7 +426,7 @@ int main(void)
   while (1)
   {
 		//read pressed key
-		char key = get_key();
+		//char key = get_key();
 		
 		// Read the B1 button (PA0) with debouncing
 		// Debounce inspired from https://www.arduino.cc/en/Tutorial/Debounce
@@ -375,6 +451,9 @@ int main(void)
 		// Every 5 ms
 		if (systick_flag)
 		{
+			// Reset flag
+			systick_flag = 0;
+			
 			// Display on 7 segment display
 			display_current_number();
 			
@@ -382,29 +461,10 @@ int main(void)
 			button_ticks++;
 			systick_counter = (systick_counter + 1) % 2000;
 			
-			// Reset flag
-			systick_flag = 0;
-			
 			// Every 20 ms
 			if (systick_counter % 4 == 0)
 			{
-				// Shift raw data array up
-				for (int i = 1; i < 10; i++)
-				{
-					raw_data[i] = raw_data[i - 1];
-				}
-				
-				// Sample raw ADC data
-				raw_data[0] = (adc_readings[0] / 1023.0) * V_REF;
-				
-				// Shift filtered data array up
-				for (int i = 1; i < 10; i++)
-				{
-					filtered_data[i] = filtered_data[i - 1];
-				}
-				
-				// Update filtered data
-				filtered_data[0] = fir_filter();
+				update_raw_and_filtered_data();
 			}
 			
 			// Every 200 ms
@@ -412,18 +472,13 @@ int main(void)
 			{
 				// Update RMS value and running MAX and running MIN
 				update_rms_and_running_max_min();
+				printf("Pressed key: %c\n", read_keypad());
 			}
 			
 			// Every 10 s
 			if (systick_counter == 0)
 			{
-				// Update MAX and MIN values
-				max_value = running_max;
-				min_value = running_min;
-				
-				// Reset running MIN and MAX values
-				running_max = 0;
-				running_min = 5;
+				update_max_and_min();
 			}
 		}
 		
@@ -590,17 +645,15 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, Digit2_Pin|Digit3_Pin|COL0_Pin|COL1_Pin 
-                          |COL2_Pin|Digit0_Pin|Digit1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOE, Digit2_Pin|Digit3_Pin|ROW0_Pin|ROW1_Pin 
+                          |ROW2_Pin|ROW3_Pin|Digit0_Pin|Digit1_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentD_Pin 
                           |SegmentE_Pin|SegmentF_Pin|SegmentG_Pin|SegmentDP_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : Digit2_Pin Digit3_Pin COL0_Pin COL1_Pin 
-                           COL2_Pin Digit0_Pin Digit1_Pin */
-  GPIO_InitStruct.Pin = Digit2_Pin|Digit3_Pin|COL0_Pin|COL1_Pin 
-                          |COL2_Pin|Digit0_Pin|Digit1_Pin;
+  /*Configure GPIO pins : Digit2_Pin Digit3_Pin Digit0_Pin Digit1_Pin */
+  GPIO_InitStruct.Pin = Digit2_Pin|Digit3_Pin|Digit0_Pin|Digit1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -612,10 +665,17 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(Button_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : ROW0_Pin ROW1_Pin ROW2_Pin ROW3_Pin */
-  GPIO_InitStruct.Pin = ROW0_Pin|ROW1_Pin|ROW2_Pin|ROW3_Pin;
+  /*Configure GPIO pins : COL0_Pin COL1_Pin COL2_Pin */
+  GPIO_InitStruct.Pin = COL0_Pin|COL1_Pin|COL2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : ROW0_Pin ROW1_Pin ROW2_Pin ROW3_Pin */
+  GPIO_InitStruct.Pin = ROW0_Pin|ROW1_Pin|ROW2_Pin|ROW3_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pins : SegmentA_Pin SegmentB_Pin SegmentC_Pin SegmentD_Pin 

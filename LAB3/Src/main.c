@@ -94,6 +94,10 @@ int keypad_counter = 0;
 int voltage_digits[2];
 int current_input_digit = 0;
 int pwm = 0;
+int keypad_debounce_ticks = 0;
+char current_keypad_char = 0;
+char last_pressed_key_debounce = 0;
+int keypad_debounce_delay = 5;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -346,7 +350,7 @@ void update_max_and_min(void)
 	running_min = 5;
 }
 
-char read_keypad(void)
+char read_keypad_char(void)
 {
 	for (int row = 0; row < 4; row++)
 	{
@@ -383,6 +387,93 @@ char read_keypad(void)
 		}
 	}
 	return 0;
+}
+
+void read_keypad(char pressed_key)
+{
+	if (pressed_key != 0)
+	{
+		//printf("Pressed key: %c\n", pressed_key);
+		if (pressed_key == last_pressed_key)
+		{
+			keypad_counter++;
+			// Press for 3 s
+			if (keypad_counter >= 150 && pressed_key == '*')
+			{
+				current_keypad_phase = SLEEP_PHASE;
+				printf("Entering SLEEP phase!\n");
+				keypad_counter = 0;
+			}
+		}
+		else
+		{
+			keypad_counter = 0;
+		}
+	}
+	else
+	{
+		if (last_pressed_key != 0)
+		{
+			printf("last_pressed_key: %c\n", last_pressed_key);
+			if (last_pressed_key == '*')
+			{
+				printf("* pressed.\n");
+				// Press for >= 1 s
+				if (keypad_counter >= 50)
+				{
+					current_keypad_phase = INPUT_PHASE;
+					printf("Entering INPUT phase!\n");
+				}
+				else
+				{
+					// Delete last digit
+					if (current_input_digit == 1)
+					{
+						current_input_digit = 0;
+						voltage_digits[1] = 0;
+					}
+					else
+					{
+						voltage_digits[0] = 0;
+					}
+					printf("Deleted. New voltage: %i.%i V\n", voltage_digits[0],  voltage_digits[1]);
+				}
+			}
+			else if (current_keypad_phase == INPUT_PHASE && last_pressed_key == '#')
+			{
+				current_keypad_phase = DISPLAY_PHASE;
+				printf("Entering DISPLAY phase.\n");
+			}
+			else if (last_pressed_key != '*' && last_pressed_key != '#')
+			{
+				printf("User input.\n");
+				//voltage_digits[current_input_digit] = last_pressed_key - '0';
+				//current_input_digit = (current_input_digit + 1) % 2;
+				//printf("User input. New voltage: %i.%i V\n", voltage_digits[0],  voltage_digits[1]);
+			}
+		}
+		keypad_counter = 0;
+	}
+	last_pressed_key = pressed_key;
+}
+
+void read_keypad_debounce(void)
+{
+	char pressed_key = read_keypad_char();
+	if (pressed_key != last_pressed_key_debounce)
+	{
+		keypad_debounce_ticks = 0;
+	}
+	if (keypad_debounce_ticks > keypad_debounce_delay)
+	{
+		if (pressed_key != current_keypad_char) {
+			current_keypad_char = pressed_key;
+			printf("Current debounced key: %c\n", pressed_key);
+			read_keypad(pressed_key);
+		}
+	}
+	last_pressed_key_debounce = pressed_key;
+	keypad_debounce_ticks++;
 }
 
 /* USER CODE END 0 */
@@ -475,75 +566,13 @@ int main(void)
 			button_ticks++;
 			systick_counter = (systick_counter + 1) % 2000;
 			
+			// Keypad
+			read_keypad_debounce();
+			
 			// Every 20 ms
 			if (systick_counter % 4 == 0)
 			{
 				update_raw_and_filtered_data();
-				
-				// Keypad
-				char pressed_key = read_keypad();
-				printf("Pressed key: %c\n", pressed_key);
-				if (pressed_key != 0)
-				{
-					if (pressed_key == last_pressed_key)
-					{
-						keypad_counter++;
-						// Press for 3 s
-						if (keypad_counter >= 150 && pressed_key == '*')
-						{
-							current_keypad_phase = SLEEP_PHASE;
-							printf("Entering SLEEP phase!\n");
-							keypad_counter = 0;
-						}
-					}
-					else
-					{
-						keypad_counter = 0;
-					}
-				}
-				else
-				{
-					if (last_pressed_key != 0)
-					{
-						if (last_pressed_key == '*')
-						{
-							// Press for >= 1 s
-							if (keypad_counter >= 50)
-							{
-								current_keypad_phase = INPUT_PHASE;
-								printf("Entering INPUT phase!\n");
-							}
-							else
-							{
-								// Delete last digit
-								if (current_input_digit == 1)
-								{
-									current_input_digit = 0;
-									voltage_digits[1] = 0;
-								}
-								else
-								{
-									voltage_digits[0] = 0;
-								}
-								printf("Deleted. New voltage: %i.%i V\n", voltage_digits[0],  voltage_digits[1]);
-							}
-						}
-						else if (current_keypad_phase == INPUT_PHASE && last_pressed_key == '#')
-						{
-							current_keypad_phase = DISPLAY_PHASE;
-							printf("Entering DISPLAY phase.\n");
-						}
-						else if (last_pressed_key != '*' && last_pressed_key != '#')
-						{
-							printf("User input.\n");
-							//voltage_digits[current_input_digit] = last_pressed_key - '0';
-							//current_input_digit = (current_input_digit + 1) % 2;
-							//printf("User input. New voltage: %i.%i V\n", voltage_digits[0],  voltage_digits[1]);
-						}
-					}
-					keypad_counter = 0;
-				}
-				last_pressed_key = pressed_key;
 			}
 			
 			// Every 200 ms

@@ -285,6 +285,12 @@ void display_current_number(void)
 				break;
 		}
 	}
+	else
+	{
+		// Set display OFF
+		HAL_GPIO_WritePin(GPIOE, Digit0_Pin|Digit1_Pin|Digit2_Pin|Digit3_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentD_Pin|SegmentE_Pin|SegmentF_Pin|SegmentG_Pin|SegmentDP_Pin, GPIO_PIN_SET);
+	}
 }
 
 /**
@@ -467,7 +473,7 @@ int main(void)
 				
 				// Keypad
 				char pressed_key = read_keypad();
-				//printf("Last pressed key: %c\n", last_pressed_key);
+				printf("Pressed key: %c\n", pressed_key);
 				if (pressed_key != 0)
 				{
 					if (pressed_key == last_pressed_key)

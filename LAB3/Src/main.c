@@ -49,6 +49,8 @@ DMA_HandleTypeDef hdma_adc1;
 
 DAC_HandleTypeDef hdac;
 
+TIM_HandleTypeDef htim3;
+
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 static const char keypad [4][3] = {
@@ -86,11 +88,12 @@ float fir_coeff[10] = {
 	0.0145608566286,
 	-0.0698589404353,
 	-0.0490319314416};
-int current_keypad_phase = INPUT_PHASE;
+int current_keypad_phase = DISPLAY_PHASE;
 char last_pressed_key = 0;
 int keypad_counter = 0;
 int voltage_digits[2];
 int current_input_digit = 0;
+int pwm = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -99,6 +102,10 @@ static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_DAC_Init(void);
+static void MX_TIM3_Init(void);
+
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+                                
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -412,7 +419,9 @@ int main(void)
   MX_DMA_Init();
   MX_ADC1_Init();
   MX_DAC_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
+	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
 	HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
 	if (HAL_ADC_Start(&hadc1) != HAL_OK)
 	{
@@ -680,6 +689,43 @@ static void MX_DAC_Init(void)
 
 }
 
+/* TIM3 init function */
+static void MX_TIM3_Init(void)
+{
+
+  TIM_MasterConfigTypeDef sMasterConfig;
+  TIM_OC_InitTypeDef sConfigOC;
+
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 24;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 200;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 100;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  HAL_TIM_MspPostInit(&htim3);
+
+}
+
 /** 
   * Enable DMA controller clock
   */
@@ -711,6 +757,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */

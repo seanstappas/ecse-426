@@ -63,6 +63,8 @@ static const char keypad [4][3] = {
 static const int INPUT_PHASE = 0;
 static const int DISPLAY_PHASE = 1;
 static const int SLEEP_PHASE = 2;
+static const int TIM3_PERIOD = 8400;
+static const float OUTPUT_VOLTAGE_TOLERANCE = 0.01f;
 volatile int systick_flag = 0;
 int systick_counter = 0;
 int current_display_digit = 0;
@@ -103,6 +105,8 @@ char current_keypad_char = 0;
 char last_pressed_key_debounce = 0;
 int keypad_debounce_delay = 5;
 int adc_counter = 0;
+float desired_output_voltage = 0.9;
+int pulse_width = 500;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -745,9 +749,9 @@ static void MX_TIM3_Init(void)
   TIM_OC_InitTypeDef sConfigOC;
 
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 83;
+  htim3.Init.Prescaler = 0;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 100;
+  htim3.Init.Period = TIM3_PERIOD;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
   {
@@ -762,7 +766,7 @@ static void MX_TIM3_Init(void)
   }
 
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 50;
+  sConfigOC.Pulse = pulse_width;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
@@ -866,6 +870,23 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) // 10 kHz (every 0.1 ms)
 	{
 		// Update RMS value and running MAX and running MIN
 		update_rms_and_running_max_min();
+		float diff = rms_value - desired_output_voltage;
+		if (diff > OUTPUT_VOLTAGE_TOLERANCE * desired_output_voltage)
+		{
+			if (pulse_width > 0)
+			{
+				pulse_width--;
+			}
+			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, pulse_width);
+		}
+		else if (diff < - OUTPUT_VOLTAGE_TOLERANCE * desired_output_voltage)
+		{
+			if (pulse_width < TIM3_PERIOD)
+			{
+				pulse_width++;
+			}
+			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, pulse_width);
+		}
 	}
 	// Every 50 ms
 	if (adc_counter % 500 == 0)

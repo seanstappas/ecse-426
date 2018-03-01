@@ -713,9 +713,9 @@ static void MX_TIM2_Init(void)
   TIM_MasterConfigTypeDef sMasterConfig;
 
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 84;
+  htim2.Init.Prescaler = 839;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 10;
+  htim2.Init.Period = 9;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
   {
@@ -745,9 +745,9 @@ static void MX_TIM3_Init(void)
   TIM_OC_InitTypeDef sConfigOC;
 
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 24;
+  htim3.Init.Prescaler = 83;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 200;
+  htim3.Init.Period = 99;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
   {
@@ -762,7 +762,7 @@ static void MX_TIM3_Init(void)
   }
 
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 100;
+  sConfigOC.Pulse = 50;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
@@ -854,35 +854,24 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) // 100 kHz (every 0.01 ms)
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) // 10 kHz (every 0.1 ms)
 {
 	adc_counter = (adc_counter + 1) % 1000000;
 	
-	// Every 0.01 ms
+	// Every 0.1 ms
 	update_raw_and_filtered_data();
 	
-	// Every 0.1 ms
+	// Every 1 ms
 	if (adc_counter % 10 == 0)
 	{
 		// Update RMS value and running MAX and running MIN
+		update_rms_and_running_max_min();
 	}
-	
-	// Every 5 ms
+	// Every 50 ms
 	if (adc_counter % 500 == 0)
 	{
-	}
-	
-	// Every 200 ms
-	if (adc_counter % 20000 == 0)
-	{
-		update_rms_and_running_max_min();
-		display_rms_value = rms_value;
-	}
-	
-	// Every 10 s
-	if (adc_counter == 0)
-	{
 		update_max_and_min();
+		display_rms_value = rms_value;
 		display_max_value = max_value;
 		display_min_value = min_value;
 	}

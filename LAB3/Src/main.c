@@ -78,6 +78,9 @@ float filtered_data[10];
 float rms_value;
 float max_value;
 float min_value;
+float display_rms_value;
+float display_max_value;
+float display_min_value;
 float fir_coeff[10] = {
 	-0.0490319314416,
 	-0.0698589404353,
@@ -99,6 +102,7 @@ int keypad_debounce_ticks = 0;
 char current_keypad_char = 0;
 char last_pressed_key_debounce = 0;
 int keypad_debounce_delay = 5;
+int adc_counter = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -286,15 +290,15 @@ void display_current_number(void)
 		{
 			case 0:
 				// Display RMS value
-				display_number(rms_value);
+				display_number(display_rms_value);
 				break;
 			case 1:
 				// Display MAX value
-				display_number(max_value);
+				display_number(display_max_value);
 				break;
 			case 2:
 				// Display MIN value
-				display_number(min_value);
+				display_number(display_min_value);
 				break;
 		}
 	}
@@ -569,32 +573,10 @@ int main(void)
 			
 			// Update counters
 			button_ticks++;
-			systick_counter = (systick_counter + 1) % 2000;
 			
 			// Keypad
 			read_keypad_debounce();
-			
-			// Every 20 ms
-			if (systick_counter % 4 == 0)
-			{
-				update_raw_and_filtered_data();
-			}
-			
-			// Every 200 ms
-			if (systick_counter % 40 == 0)
-			{
-				// Update RMS value and running MAX and running MIN
-				update_rms_and_running_max_min();
-			}
-			
-			// Every 10 s
-			if (systick_counter == 0)
-			{
-				update_max_and_min();
-			}
 		}
-		
-
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
@@ -872,10 +854,38 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) // 100 kHz (every 0.01 ms)
 {
-	HAL_ADC_GetValue(&hadc1);
-	printf("DMA value: %i\n", adc_readings[0]);
+	adc_counter = (adc_counter + 1) % 1000000;
+	
+	// Every 0.01 ms
+	update_raw_and_filtered_data();
+	
+	// Every 0.1 ms
+	if (adc_counter % 10 == 0)
+	{
+		// Update RMS value and running MAX and running MIN
+	}
+	
+	// Every 5 ms
+	if (adc_counter % 500 == 0)
+	{
+	}
+	
+	// Every 200 ms
+	if (adc_counter % 20000 == 0)
+	{
+		update_rms_and_running_max_min();
+		display_rms_value = rms_value;
+	}
+	
+	// Every 10 s
+	if (adc_counter == 0)
+	{
+		update_max_and_min();
+		display_max_value = max_value;
+		display_min_value = min_value;
+	}
 }
 /* USER CODE END 4 */
 

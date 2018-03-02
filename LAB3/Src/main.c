@@ -105,8 +105,8 @@ char current_keypad_char = 0;
 char last_pressed_key_debounce = 0;
 int keypad_debounce_delay = 5;
 int adc_counter = 0;
-float desired_output_voltage = 0.9;
-int pulse_width = 500;
+float desired_output_voltage = 1.6;
+int pulse_width = 50;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -360,6 +360,20 @@ void update_max_and_min(void)
 	running_min = 5;
 }
 
+float convert_user_input_to_desired_range(int first_digit, int second_digit)
+{
+	float converted_number = first_digit + 0.1f * second_digit;
+	if (converted_number > 2.3f)
+	{
+		converted_number = 2.3f;
+	}
+	else if (converted_number < 0)
+	{
+		converted_number = 0;
+	}
+	return converted_number;
+}
+
 char read_keypad_char(void)
 {
 	for (int row = 0; row < 4; row++)
@@ -404,6 +418,7 @@ void read_keypad(char pressed_key)
 	if (pressed_key != 0)
 	{
 		//printf("Pressed key: %c\n", pressed_key);
+		/*
 		if (pressed_key == last_pressed_key)
 		{
 			keypad_counter++;
@@ -419,12 +434,13 @@ void read_keypad(char pressed_key)
 		{
 			keypad_counter = 0;
 		}
+		*/
 	}
 	else
 	{
 		if (last_pressed_key != 0)
 		{
-			printf("last_pressed_key: %c\n", last_pressed_key);
+			//printf("last_pressed_key: %c\n", last_pressed_key);
 			if (last_pressed_key == '*')
 			{
 				printf("* pressed.\n");
@@ -452,13 +468,15 @@ void read_keypad(char pressed_key)
 			else if (current_keypad_phase == INPUT_PHASE && last_pressed_key == '#')
 			{
 				current_keypad_phase = DISPLAY_PHASE;
-				printf("Entering DISPLAY phase.\n");
+				printf("Entering DISPLAY phase\n");
+				printf("Desired output voltage: %f\n", desired_output_voltage);
 			}
 			else if (last_pressed_key != '*' && last_pressed_key != '#')
 			{
-				printf("User input.\n");
-				//voltage_digits[current_input_digit] = last_pressed_key - '0';
-				//current_input_digit = (current_input_digit + 1) % 2;
+				printf("User input: %c.\n", last_pressed_key);
+				voltage_digits[current_input_digit] = last_pressed_key - '0';
+				current_input_digit = (current_input_digit + 1) % 2;
+				float desired_output_voltage = convert_user_input_to_desired_range(voltage_digits[0], voltage_digits[1]);
 				//printf("User input. New voltage: %i.%i V\n", voltage_digits[0],  voltage_digits[1]);
 			}
 		}
@@ -467,9 +485,29 @@ void read_keypad(char pressed_key)
 	last_pressed_key = pressed_key;
 }
 
+void read_keypad_v2(char pressed_key)
+{
+	if (pressed_key != 0)
+	{
+		if (pressed_key != last_pressed_key)
+		{
+			printf("New key: %c\n", pressed_key);
+		}
+		else
+		{
+			printf("Same key: %c == %c\n", pressed_key, last_pressed_key);
+		}
+	}
+	last_pressed_key = pressed_key;
+}
+
 void read_keypad_debounce(void)
 {
 	char pressed_key = read_keypad_char();
+	read_keypad_v2(pressed_key);
+	
+	//printf("Pressed key: %c\n", pressed_key);
+	/*
 	if (pressed_key != last_pressed_key_debounce)
 	{
 		keypad_debounce_ticks = 0;
@@ -484,6 +522,7 @@ void read_keypad_debounce(void)
 	}
 	last_pressed_key_debounce = pressed_key;
 	keypad_debounce_ticks++;
+	*/
 }
 
 /* USER CODE END 0 */
@@ -578,7 +617,6 @@ int main(void)
 			// Update counters
 			button_ticks++;
 			
-			// Keypad
 			read_keypad_debounce();
 		}
   /* USER CODE END WHILE */
@@ -888,6 +926,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) // 10 kHz (every 0.1 ms)
 			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, pulse_width);
 		}
 	}
+	
 	// Every 50 ms
 	if (adc_counter % 500 == 0)
 	{

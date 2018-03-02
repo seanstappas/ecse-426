@@ -94,7 +94,7 @@ float fir_coeff[10] = {
 	0.0145608566286,
 	-0.0698589404353,
 	-0.0490319314416};
-int current_keypad_phase = DISPLAY_PHASE;
+int current_keypad_phase = INPUT_PHASE;
 char last_pressed_key = 0;
 int keypad_counter = 0;
 int voltage_digits[2];
@@ -103,7 +103,7 @@ int pwm = 0;
 int keypad_debounce_ticks = 0;
 char current_keypad_char = 0;
 char last_pressed_key_debounce = 0;
-int keypad_debounce_delay = 5;
+int keypad_debounce_delay = 10;
 int adc_counter = 0;
 float desired_output_voltage = 1.6;
 int pulse_width = 50;
@@ -231,16 +231,15 @@ void display_digit(int digit)
 			break;
 		case 7:
 			HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentD_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOD, SegmentD_Pin|SegmentE_Pin|SegmentF_Pin|SegmentG_Pin|SegmentDP_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOD, SegmentD_Pin|SegmentE_Pin|SegmentF_Pin|SegmentG_Pin, GPIO_PIN_RESET);
 			break;
 		case 8:
 			HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentD_Pin 
-                          |SegmentE_Pin|SegmentF_Pin|SegmentG_Pin|SegmentDP_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOD, SegmentDP_Pin, GPIO_PIN_RESET);
+                          |SegmentE_Pin|SegmentF_Pin|SegmentG_Pin, GPIO_PIN_SET);
 			break;
 		case 9:
-			HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentF_Pin|SegmentG_Pin|SegmentDP_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOD, SegmentD_Pin|SegmentE_Pin|SegmentDP_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentF_Pin|SegmentG_Pin, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(GPIOD, SegmentD_Pin|SegmentE_Pin, GPIO_PIN_RESET);
 			break;
 	}
 }
@@ -282,12 +281,32 @@ void display_number(float num)
 	current_display_digit = (current_display_digit + 1) % 4;
 }
 
+void display_desired_voltage()
+{
+	switch(current_display_digit)
+	{
+		case 1:
+			HAL_GPIO_WritePin(GPIOE, Digit1_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOE, Digit0_Pin|Digit2_Pin|Digit3_Pin, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(GPIOD, SegmentDP_Pin, GPIO_PIN_SET); // Set decimal point
+			display_digit(voltage_digits[0]);
+			break;
+		case 2:
+			HAL_GPIO_WritePin(GPIOE, Digit2_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOE, Digit0_Pin|Digit1_Pin|Digit3_Pin, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(GPIOD, SegmentDP_Pin, GPIO_PIN_RESET);
+			display_digit(voltage_digits[1]);
+			break;
+	}
+	current_display_digit = (current_display_digit + 1) % 4;
+}
+
 /**
   * @brief  Displays either the RMS, MAX or MIN value depending on the current mode.
   * @retval None
   */
 void display_current_number(void)
-{
+{	
 	if (current_keypad_phase == DISPLAY_PHASE)
 	{
 		switch(current_display_mode)
@@ -306,12 +325,16 @@ void display_current_number(void)
 				break;
 		}
 	}
-	else
+	else if (current_keypad_phase == INPUT_PHASE)
 	{
-		// Set display OFF
-		HAL_GPIO_WritePin(GPIOE, Digit0_Pin|Digit1_Pin|Digit2_Pin|Digit3_Pin, GPIO_PIN_SET);
-		HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentD_Pin|SegmentE_Pin|SegmentF_Pin|SegmentG_Pin|SegmentDP_Pin, GPIO_PIN_SET);
+		display_desired_voltage();
 	}
+}
+
+void disable_display(void)
+{
+	HAL_GPIO_WritePin(GPIOE, Digit0_Pin|Digit1_Pin|Digit2_Pin|Digit3_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentD_Pin|SegmentE_Pin|SegmentF_Pin|SegmentG_Pin|SegmentDP_Pin, GPIO_PIN_SET);
 }
 
 /**
@@ -417,16 +440,15 @@ void read_keypad(char pressed_key)
 {
 	if (pressed_key != 0)
 	{
-		//printf("Pressed key: %c\n", pressed_key);
-		/*
-		if (pressed_key == last_pressed_key)
+		if (pressed_key == '*' && pressed_key == last_pressed_key)
 		{
 			keypad_counter++;
 			// Press for 3 s
-			if (keypad_counter >= 150 && pressed_key == '*')
+			if (keypad_counter >= 600)
 			{
+				// Enter sleep phase
 				current_keypad_phase = SLEEP_PHASE;
-				printf("Entering SLEEP phase!\n");
+				disable_display();
 				keypad_counter = 0;
 			}
 		}
@@ -434,50 +456,50 @@ void read_keypad(char pressed_key)
 		{
 			keypad_counter = 0;
 		}
-		*/
 	}
 	else
 	{
 		if (last_pressed_key != 0)
 		{
-			//printf("last_pressed_key: %c\n", last_pressed_key);
 			if (last_pressed_key == '*')
 			{
-				printf("* pressed.\n");
 				// Press for >= 1 s
-				if (keypad_counter >= 50)
+				if (keypad_counter >= 200)
 				{
+					// Enter input phase
 					current_keypad_phase = INPUT_PHASE;
-					printf("Entering INPUT phase!\n");
+					disable_display();
 				}
-				else
+				else if (current_keypad_phase == INPUT_PHASE)
 				{
 					// Delete last digit
-					if (current_input_digit == 1)
+					if (voltage_digits[1] != 0)
 					{
-						current_input_digit = 0;
 						voltage_digits[1] = 0;
+						current_input_digit = 1;
 					}
 					else
 					{
 						voltage_digits[0] = 0;
+						current_input_digit = 0;
 					}
-					printf("Deleted. New voltage: %i.%i V\n", voltage_digits[0],  voltage_digits[1]);
+					desired_output_voltage = convert_user_input_to_desired_range(voltage_digits[0], voltage_digits[1]);
 				}
 			}
-			else if (current_keypad_phase == INPUT_PHASE && last_pressed_key == '#')
+			else if (current_keypad_phase == INPUT_PHASE)
 			{
-				current_keypad_phase = DISPLAY_PHASE;
-				printf("Entering DISPLAY phase\n");
-				printf("Desired output voltage: %f\n", desired_output_voltage);
-			}
-			else if (last_pressed_key != '*' && last_pressed_key != '#')
-			{
-				printf("User input: %c.\n", last_pressed_key);
-				voltage_digits[current_input_digit] = last_pressed_key - '0';
-				current_input_digit = (current_input_digit + 1) % 2;
-				float desired_output_voltage = convert_user_input_to_desired_range(voltage_digits[0], voltage_digits[1]);
-				//printf("User input. New voltage: %i.%i V\n", voltage_digits[0],  voltage_digits[1]);
+				if (last_pressed_key == '#')
+				{
+					// Enter display phase
+					current_keypad_phase = DISPLAY_PHASE;
+				}
+				else if (last_pressed_key != '*' && last_pressed_key != '#')
+				{
+					// User Input
+					voltage_digits[current_input_digit] = last_pressed_key - '0';
+					current_input_digit = (current_input_digit + 1) % 2;
+					desired_output_voltage = convert_user_input_to_desired_range(voltage_digits[0], voltage_digits[1]);
+				}
 			}
 		}
 		keypad_counter = 0;
@@ -485,44 +507,22 @@ void read_keypad(char pressed_key)
 	last_pressed_key = pressed_key;
 }
 
-void read_keypad_v2(char pressed_key)
-{
-	if (pressed_key != 0)
-	{
-		if (pressed_key != last_pressed_key)
-		{
-			printf("New key: %c\n", pressed_key);
-		}
-		else
-		{
-			printf("Same key: %c == %c\n", pressed_key, last_pressed_key);
-		}
-	}
-	last_pressed_key = pressed_key;
-}
-
 void read_keypad_debounce(void)
 {
 	char pressed_key = read_keypad_char();
-	read_keypad_v2(pressed_key);
-	
-	//printf("Pressed key: %c\n", pressed_key);
-	/*
 	if (pressed_key != last_pressed_key_debounce)
 	{
 		keypad_debounce_ticks = 0;
 	}
 	if (keypad_debounce_ticks > keypad_debounce_delay)
 	{
-		if (pressed_key != current_keypad_char) {
-			current_keypad_char = pressed_key;
-			printf("Current debounced key: %c\n", pressed_key);
+		//if (pressed_key != current_keypad_char) {
+		//	current_keypad_char = pressed_key;
 			read_keypad(pressed_key);
-		}
+		//}
 	}
 	last_pressed_key_debounce = pressed_key;
 	keypad_debounce_ticks++;
-	*/
 }
 
 /* USER CODE END 0 */
@@ -898,42 +898,45 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) // 10 kHz (every 0.1 ms)
 {
-	adc_counter = (adc_counter + 1) % 1000000;
-	
-	// Every 0.1 ms
-	update_raw_and_filtered_data();
-	
-	// Every 1 ms
-	if (adc_counter % 10 == 0)
+	if (current_keypad_phase == DISPLAY_PHASE)
 	{
-		// Update RMS value and running MAX and running MIN
-		update_rms_and_running_max_min();
-		float diff = rms_value - desired_output_voltage;
-		if (diff > OUTPUT_VOLTAGE_TOLERANCE * desired_output_voltage)
+		adc_counter = (adc_counter + 1) % 1000000;
+		
+		// Every 0.1 ms
+		update_raw_and_filtered_data();
+		
+		// Every 1 ms
+		if (adc_counter % 10 == 0)
 		{
-			if (pulse_width > 0)
+			// Update RMS value and running MAX and running MIN
+			update_rms_and_running_max_min();
+			float diff = rms_value - desired_output_voltage;
+			if (diff > OUTPUT_VOLTAGE_TOLERANCE * desired_output_voltage)
 			{
-				pulse_width--;
+				if (pulse_width > 0)
+				{
+					pulse_width--;
+				}
+				__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, pulse_width);
 			}
-			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, pulse_width);
+			else if (diff < - OUTPUT_VOLTAGE_TOLERANCE * desired_output_voltage)
+			{
+				if (pulse_width < TIM3_PERIOD)
+				{
+					pulse_width++;
+				}
+				__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, pulse_width);
+			}
 		}
-		else if (diff < - OUTPUT_VOLTAGE_TOLERANCE * desired_output_voltage)
+		
+		// Every 50 ms
+		if (adc_counter % 500 == 0)
 		{
-			if (pulse_width < TIM3_PERIOD)
-			{
-				pulse_width++;
-			}
-			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, pulse_width);
+			update_max_and_min();
+			display_rms_value = rms_value;
+			display_max_value = max_value;
+			display_min_value = min_value;
 		}
-	}
-	
-	// Every 50 ms
-	if (adc_counter % 500 == 0)
-	{
-		update_max_and_min();
-		display_rms_value = rms_value;
-		display_max_value = max_value;
-		display_min_value = min_value;
 	}
 }
 /* USER CODE END 4 */

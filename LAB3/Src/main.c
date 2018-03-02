@@ -128,13 +128,16 @@ uint32_t voltage_to_DAC_DOR(float voltage);
 void set_DAC_value(float voltage);
 void display_digit(int digit);
 void display_number(float num);
+void display_desired_voltage();
 void display_current_number(void);
+void disable_display(void);
 float fir_filter(void);
-int read_row(void);
-int read_col(void);
-char get_key(void);
 void update_raw_and_filtered_data(void);
 void update_max_and_min(void);
+float convert_user_input_to_desired_range(int first_digit, int second_digit);
+char read_keypad_char(void);
+void read_keypad(char pressed_key);
+void read_keypad_debounce(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */

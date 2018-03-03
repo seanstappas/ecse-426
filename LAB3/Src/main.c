@@ -64,7 +64,6 @@ static const int INPUT_PHASE = 0;
 static const int DISPLAY_PHASE = 1;
 static const int SLEEP_PHASE = 2;
 static const int TIM3_PERIOD = 8400;
-static const float OUTPUT_VOLTAGE_TOLERANCE = 0.01f;
 volatile int systick_flag = 0;
 int systick_counter = 0;
 int current_display_digit = 0;
@@ -128,7 +127,7 @@ uint32_t voltage_to_DAC_DOR(float voltage);
 void set_DAC_value(float voltage);
 void display_digit(int digit);
 void display_number(float num);
-void display_desired_voltage();
+void display_desired_voltage(void);
 void display_current_number(void);
 void disable_display(void);
 float fir_filter(void);
@@ -136,7 +135,7 @@ void update_raw_and_filtered_data(void);
 void update_max_and_min(void);
 float convert_user_input_to_desired_range(int first_digit, int second_digit);
 char read_keypad_char(void);
-void read_keypad(char pressed_key);
+void handle_keypad_pressed_key(char pressed_key);
 void read_keypad_debounce(void);
 /* USER CODE END PFP */
 
@@ -284,6 +283,10 @@ void display_number(float num)
 	current_display_digit = (current_display_digit + 1) % 4;
 }
 
+/**
+  * @brief  Displays the desired voltage on the 7 segment display.
+  * @retval None
+  */
 void display_desired_voltage()
 {
 	switch(current_display_digit)
@@ -334,6 +337,10 @@ void display_current_number(void)
 	}
 }
 
+/**
+  * @brief  Turns off the 7 segment display.
+  * @retval None
+  */
 void disable_display(void)
 {
 	HAL_GPIO_WritePin(GPIOE, Digit0_Pin|Digit1_Pin|Digit2_Pin|Digit3_Pin, GPIO_PIN_SET);
@@ -354,6 +361,10 @@ float fir_filter(void)
 	return sum;
 }
 
+/**
+  * @brief  Updates the raw data vector and the filtered data vector.
+  * @retval None
+  */
 void update_raw_and_filtered_data(void)
 {	
 	// Shift raw data array up
@@ -375,6 +386,10 @@ void update_raw_and_filtered_data(void)
 	filtered_data[0] = fir_filter();
 }
 
+/**
+  * @brief  Updates the max and min values.
+  * @retval None
+  */
 void update_max_and_min(void)
 {
 	// Update MAX and MIN values
@@ -386,6 +401,12 @@ void update_max_and_min(void)
 	running_min = 5;
 }
 
+/**
+  * @brief  Converts the user input desired voltage to a voltage within the allowable range.
+  * @param  first_digit: The first digit of the desired voltage.
+  * @param  second_digit: The second digit of the desired voltage.
+  * @retval the converted voltage
+  */
 float convert_user_input_to_desired_range(int first_digit, int second_digit)
 {
 	float converted_number = first_digit + 0.1f * second_digit;
@@ -400,6 +421,10 @@ float convert_user_input_to_desired_range(int first_digit, int second_digit)
 	return converted_number;
 }
 
+/**
+  * @brief  Reads the currently pressed keypad character.
+  * @retval the pressed character, or 0 if no character is pressed
+  */
 char read_keypad_char(void)
 {
 	for (int row = 0; row < 4; row++)
@@ -439,7 +464,12 @@ char read_keypad_char(void)
 	return 0;
 }
 
-void read_keypad(char pressed_key)
+/**
+  * @brief  Changes the state of the system based on the currently pressed key.
+  * @param  pressed_key: The currently pressed keypad key.
+  * @retval None
+  */
+void handle_keypad_pressed_key(char pressed_key)
 {
 	if (pressed_key != 0)
 	{
@@ -510,6 +540,10 @@ void read_keypad(char pressed_key)
 	last_pressed_key = pressed_key;
 }
 
+/**
+  * @brief  Reads the currently pressed keypad key with debouncing.
+  * @retval None
+  */
 void read_keypad_debounce(void)
 {
 	char pressed_key = read_keypad_char();
@@ -519,10 +553,7 @@ void read_keypad_debounce(void)
 	}
 	if (keypad_debounce_ticks > keypad_debounce_delay)
 	{
-		//if (pressed_key != current_keypad_char) {
-		//	current_keypad_char = pressed_key;
-			read_keypad(pressed_key);
-		//}
+			handle_keypad_pressed_key(pressed_key);
 	}
 	last_pressed_key_debounce = pressed_key;
 	keypad_debounce_ticks++;
@@ -914,19 +945,44 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) // 10 kHz (every 0.1 ms)
 			// Update RMS value and running MAX and running MIN
 			update_rms_and_running_max_min();
 			float diff = rms_value - desired_output_voltage;
-			if (diff > OUTPUT_VOLTAGE_TOLERANCE * desired_output_voltage)
+			int pulse_delta = 0;
+			if (diff >= 1 || diff <= -1)
 			{
-				if (pulse_width > 0)
+				pulse_delta = 20;
+			}
+			else if (diff >= 0.5f || diff <= -0.5f)
+			{
+				pulse_delta = 15;
+			}
+			else if (diff >= 0.1f || diff <= -0.1f)
+			{
+				pulse_delta = 10;
+			}
+			else if (diff >= 0.05f || diff <= -0.05f)
+			{
+				pulse_delta = 5;
+			}
+			else if (diff >= 0.01f || diff <= -0.01f)
+			{
+				pulse_delta = 2;
+			}
+			else if (diff >= 0.005f || diff <= -0.005f)
+			{
+				pulse_delta = 1;
+			}
+			if (diff > 0)
+			{
+				if (pulse_width >= pulse_delta)
 				{
-					pulse_width--;
+					pulse_width -= pulse_delta;
 				}
 				__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, pulse_width);
 			}
-			else if (diff < - OUTPUT_VOLTAGE_TOLERANCE * desired_output_voltage)
+			else if (diff < 0)
 			{
-				if (pulse_width < TIM3_PERIOD)
+				if (pulse_width <= TIM3_PERIOD - pulse_delta)
 				{
-					pulse_width++;
+					pulse_width += pulse_delta;
 				}
 				__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, pulse_width);
 			}

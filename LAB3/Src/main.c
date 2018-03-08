@@ -41,6 +41,8 @@
 
 /* USER CODE BEGIN Includes */
 #include "arm_math.h"
+#include "display.h"
+#include "keypad.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -54,34 +56,30 @@ TIM_HandleTypeDef htim3;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-static const char keypad [4][3] = {
-	{'1', '2', '3'},
-	{'4', '5', '6'},
-	{'7', '8', '9'},
-	{'*', '0', '#'}
-};
-static const int INPUT_PHASE = 0;
-static const int DISPLAY_PHASE = 1;
-static const int SLEEP_PHASE = 2;
-static const int TIM3_PERIOD = 8400;
 volatile int systick_flag = 0;
+volatile int current_keypad_phase = INPUT_PHASE;
+volatile int current_display_mode = DISPLAY_MODE_RMS;
+volatile int voltage_digits[2];
+volatile float display_rms_value;
+volatile float display_max_value;
+volatile float display_min_value;
+volatile float desired_output_voltage;
+uint32_t adc_readings[1];
 int systick_counter = 0;
-int current_display_digit = 0;
-int current_display_mode = 0;
-float running_min = 5;
-float running_max = 0;
 float adc_value = 0.0;
 int button_ticks = 0;
 int button_debounce_delay = 10;
+int pwm = 0;
+int adc_counter = 0;
+int pulse_width = 50;
 uint32_t adc_readings[1];
-float raw_data[10];
-float filtered_data[10];
 float rms_value;
 float max_value;
 float min_value;
-float display_rms_value;
-float display_max_value;
-float display_min_value;
+float filtered_data[10];
+float running_min = 5;
+float running_max = 0;
+float raw_data[10];
 float fir_coeff[10] = {
 	-0.0490319314416,
 	-0.0698589404353,
@@ -93,19 +91,6 @@ float fir_coeff[10] = {
 	0.0145608566286,
 	-0.0698589404353,
 	-0.0490319314416};
-int current_keypad_phase = INPUT_PHASE;
-char last_pressed_key = 0;
-int keypad_counter = 0;
-int voltage_digits[2];
-int current_input_digit = 0;
-int pwm = 0;
-int keypad_debounce_ticks = 0;
-char current_keypad_char = 0;
-char last_pressed_key_debounce = 0;
-int keypad_debounce_delay = 10;
-int adc_counter = 0;
-float desired_output_voltage = 1.6;
-int pulse_width = 50;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -122,24 +107,11 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
-void update_rms_and_running_max_min(void);
-uint32_t voltage_to_DAC_DOR(float voltage);
-void set_DAC_value(float voltage);
-void display_digit(int digit);
-void display_number(float num);
-void display_desired_voltage(void);
-void display_current_number(void);
-void disable_display(void);
-float fir_filter(void);
-void update_raw_and_filtered_data(void);
-void update_max_and_min(void);
-float convert_user_input_to_desired_range(int first_digit, int second_digit);
-char read_keypad_char(void);
-void handle_keypad_pressed_key(char pressed_key);
-void read_keypad_debounce(void);
+void adc_callback(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
+
 /**
   * @brief  Updates the RMS, running MAX and running MIN based on the filtered data array.
   * @retval None
@@ -161,190 +133,6 @@ void update_rms_and_running_max_min(void){
 	if(running_min>min){
 		running_min = min;
 	}
-}
-
-/**
-  * @brief  Isolates for DOR in the following formula: DAC_OUTx = VREF+ * DOR / 4095.
-  * @param  voltage: The voltage to be converted.
-  * @retval The analog voltage converted to digital number.
-  */
-uint32_t voltage_to_DAC_DOR(float voltage)
-{
-	return (uint32_t)((voltage * 4095) / V_REF);
-}
-
-/**
-  * @brief  Sets the DAC port to the desired voltage value.
-  * @param  voltage: The voltage to set the DAC port to.
-  * @retval None
-  */
-void set_DAC_value(float voltage)
-{
-	uint32_t converted_DAC_value = voltage_to_DAC_DOR(voltage);
-	HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, converted_DAC_value);
-}
-
-// 7-Segment Display
-// Pins PD0 to PD7: Segments
-// Pins PE0 to PE3: Digits
-
-/**
-  * @brief  Activate the required segments to display the desired digit.
-  * @param  digit: The digit to display.
-  * @retval None
-  */
-void display_digit(int digit)
-{
-	switch(digit)
-	{
-		case 0:
-			HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentD_Pin 
-                          |SegmentE_Pin|SegmentF_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOD, SegmentG_Pin, GPIO_PIN_RESET);
-			break;
-		case 1:
-			HAL_GPIO_WritePin(GPIOD, SegmentB_Pin|SegmentC_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentD_Pin 
-                          |SegmentE_Pin|SegmentF_Pin|SegmentG_Pin, GPIO_PIN_RESET);
-			break;
-		case 2:
-			HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentD_Pin 
-                          |SegmentE_Pin|SegmentG_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOD, SegmentC_Pin|SegmentF_Pin, GPIO_PIN_RESET);
-			break;
-		case 3:
-			HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentD_Pin 
-                          |SegmentG_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOD, SegmentE_Pin|SegmentF_Pin, GPIO_PIN_RESET);
-			break;
-		case 4:
-			HAL_GPIO_WritePin(GPIOD, SegmentB_Pin|SegmentC_Pin|SegmentF_Pin|SegmentG_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentD_Pin|SegmentE_Pin, GPIO_PIN_RESET);
-			break;
-		case 5:
-			HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentC_Pin|SegmentD_Pin 
-                          |SegmentF_Pin|SegmentG_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOD, SegmentB_Pin|SegmentE_Pin, GPIO_PIN_RESET);
-			break;
-		case 6:
-			HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentC_Pin|SegmentD_Pin 
-                          |SegmentE_Pin|SegmentF_Pin|SegmentG_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOD, SegmentB_Pin, GPIO_PIN_RESET);
-			break;
-		case 7:
-			HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentD_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOD, SegmentD_Pin|SegmentE_Pin|SegmentF_Pin|SegmentG_Pin, GPIO_PIN_RESET);
-			break;
-		case 8:
-			HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentD_Pin 
-                          |SegmentE_Pin|SegmentF_Pin|SegmentG_Pin, GPIO_PIN_SET);
-			break;
-		case 9:
-			HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentF_Pin|SegmentG_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOD, SegmentD_Pin|SegmentE_Pin, GPIO_PIN_RESET);
-			break;
-	}
-}
-
-/**
-  * @brief  Displays a 3-digit number (ranging from 0.00 to 9.99) on the 7 segment display.
-  * @param  num: The number to display.
-  * @retval None
-  */
-void display_number(float num)
-{
-	switch(current_display_digit)
-	{
-		case 0:
-			HAL_GPIO_WritePin(GPIOE, Digit0_Pin, GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(GPIOE, Digit1_Pin|Digit2_Pin|Digit3_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOD, SegmentDP_Pin, GPIO_PIN_RESET);
-			display_digit(current_display_mode);
-			break;
-		case 1:
-			HAL_GPIO_WritePin(GPIOE, Digit1_Pin, GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(GPIOE, Digit0_Pin|Digit2_Pin|Digit3_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOD, SegmentDP_Pin, GPIO_PIN_SET); // Set decimal point
-			display_digit((int) num);
-			break;
-		case 2:
-			HAL_GPIO_WritePin(GPIOE, Digit2_Pin, GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(GPIOE, Digit0_Pin|Digit1_Pin|Digit3_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOD, SegmentDP_Pin, GPIO_PIN_RESET);
-			display_digit(((int)(num * 10) % 10));
-			break;
-		case 3:
-			HAL_GPIO_WritePin(GPIOE, Digit3_Pin, GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(GPIOE, Digit0_Pin|Digit1_Pin|Digit2_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOD, SegmentDP_Pin, GPIO_PIN_RESET);
-			display_digit(((int)(num * 100) % 10));
-			break;
-	}
-	current_display_digit = (current_display_digit + 1) % 4;
-}
-
-/**
-  * @brief  Displays the desired voltage on the 7 segment display.
-  * @retval None
-  */
-void display_desired_voltage()
-{
-	switch(current_display_digit)
-	{
-		case 1:
-			HAL_GPIO_WritePin(GPIOE, Digit1_Pin, GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(GPIOE, Digit0_Pin|Digit2_Pin|Digit3_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOD, SegmentDP_Pin, GPIO_PIN_SET); // Set decimal point
-			display_digit(voltage_digits[0]);
-			break;
-		case 2:
-			HAL_GPIO_WritePin(GPIOE, Digit2_Pin, GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(GPIOE, Digit0_Pin|Digit1_Pin|Digit3_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOD, SegmentDP_Pin, GPIO_PIN_RESET);
-			display_digit(voltage_digits[1]);
-			break;
-	}
-	current_display_digit = (current_display_digit + 1) % 4;
-}
-
-/**
-  * @brief  Displays either the RMS, MAX or MIN value depending on the current mode.
-  * @retval None
-  */
-void display_current_number(void)
-{	
-	if (current_keypad_phase == DISPLAY_PHASE)
-	{
-		switch(current_display_mode)
-		{
-			case 0:
-				// Display RMS value
-				display_number(display_rms_value);
-				break;
-			case 1:
-				// Display MAX value
-				display_number(display_max_value);
-				break;
-			case 2:
-				// Display MIN value
-				display_number(display_min_value);
-				break;
-		}
-	}
-	else if (current_keypad_phase == INPUT_PHASE)
-	{
-		display_desired_voltage();
-	}
-}
-
-/**
-  * @brief  Turns off the 7 segment display.
-  * @retval None
-  */
-void disable_display(void)
-{
-	HAL_GPIO_WritePin(GPIOE, Digit0_Pin|Digit1_Pin|Digit2_Pin|Digit3_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentD_Pin|SegmentE_Pin|SegmentF_Pin|SegmentG_Pin|SegmentDP_Pin, GPIO_PIN_SET);
 }
 
 /**
@@ -401,164 +189,74 @@ void update_max_and_min(void)
 	running_min = 5;
 }
 
-/**
-  * @brief  Converts the user input desired voltage to a voltage within the allowable range.
-  * @param  first_digit: The first digit of the desired voltage.
-  * @param  second_digit: The second digit of the desired voltage.
-  * @retval the converted voltage
-  */
-float convert_user_input_to_desired_range(int first_digit, int second_digit)
+void adc_callback(void)
 {
-	float converted_number = first_digit + 0.1f * second_digit;
-	if (converted_number > 2.3f)
+	if (current_keypad_phase == DISPLAY_PHASE)
 	{
-		converted_number = 2.3f;
-	}
-	else if (converted_number < 0)
-	{
-		converted_number = 0;
-	}
-	return converted_number;
-}
-
-/**
-  * @brief  Reads the currently pressed keypad character.
-  * @retval the pressed character, or 0 if no character is pressed
-  */
-char read_keypad_char(void)
-{
-	for (int row = 0; row < 4; row++)
-	{
-		switch(row)
+		adc_counter = (adc_counter + 1) % 1000000;
+		
+		// Every 0.1 ms
+		update_raw_and_filtered_data();
+		
+		// Every 1 ms
+		if (adc_counter % 10 == 0)
 		{
-			case 0:
-				HAL_GPIO_WritePin(GPIOE, ROW0_Pin, GPIO_PIN_SET);
-				HAL_GPIO_WritePin(GPIOE, ROW1_Pin|ROW2_Pin|ROW3_Pin, GPIO_PIN_RESET);
-				break;
-			case 1:
-				HAL_GPIO_WritePin(GPIOE, ROW1_Pin, GPIO_PIN_SET);
-				HAL_GPIO_WritePin(GPIOE, ROW0_Pin|ROW2_Pin|ROW3_Pin, GPIO_PIN_RESET);
-				break;
-			case 2:
-				HAL_GPIO_WritePin(GPIOE, ROW2_Pin, GPIO_PIN_SET);
-				HAL_GPIO_WritePin(GPIOE, ROW0_Pin|ROW1_Pin|ROW3_Pin, GPIO_PIN_RESET);
-				break;
-			case 3:
-				HAL_GPIO_WritePin(GPIOE, ROW3_Pin, GPIO_PIN_SET);
-				HAL_GPIO_WritePin(GPIOE, ROW0_Pin|ROW1_Pin|ROW2_Pin, GPIO_PIN_RESET);
-				break;
-		}
-		if (HAL_GPIO_ReadPin(GPIOE, COL1_Pin))
-		{
-			return keypad[row][1];
-		}
-		else if (HAL_GPIO_ReadPin(GPIOE, COL0_Pin))
-		{
-			return keypad[row][0];
-		}
-		else if (HAL_GPIO_ReadPin(GPIOE, COL2_Pin))
-		{
-			return keypad[row][2];
-		}
-	}
-	return 0;
-}
-
-/**
-  * @brief  Changes the state of the system based on the currently pressed key.
-  * @param  pressed_key: The currently pressed keypad key.
-  * @retval None
-  */
-void handle_keypad_pressed_key(char pressed_key)
-{
-	if (pressed_key != 0)
-	{
-		if (pressed_key == '*' && pressed_key == last_pressed_key)
-		{
-			keypad_counter++;
-			// Press for 3 s
-			if (keypad_counter >= 600)
+			// Update RMS value and running MAX and running MIN
+			update_rms_and_running_max_min();
+			float diff = rms_value - desired_output_voltage;
+			int pulse_delta = 0;
+			if (diff >= 1 || diff <= -1)
 			{
-				// Enter sleep phase
-				current_keypad_phase = SLEEP_PHASE;
-				disable_display();
-				keypad_counter = 0;
+				pulse_delta = 20;
+			}
+			else if (diff >= 0.5f || diff <= -0.5f)
+			{
+				pulse_delta = 15;
+			}
+			else if (diff >= 0.1f || diff <= -0.1f)
+			{
+				pulse_delta = 10;
+			}
+			else if (diff >= 0.05f || diff <= -0.05f)
+			{
+				pulse_delta = 5;
+			}
+			else if (diff >= 0.01f || diff <= -0.01f)
+			{
+				pulse_delta = 2;
+			}
+			else if (diff >= 0.005f || diff <= -0.005f)
+			{
+				pulse_delta = 1;
+			}
+			if (diff > 0)
+			{
+				if (pulse_width >= pulse_delta)
+				{
+					pulse_width -= pulse_delta;
+				}
+				__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, pulse_width);
+			}
+			else if (diff < 0)
+			{
+				if (pulse_width <= TIM3_PERIOD - pulse_delta)
+				{
+					pulse_width += pulse_delta;
+				}
+				__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, pulse_width);
 			}
 		}
-		else
+		
+		// Every 50 ms
+		if (adc_counter % 500 == 0)
 		{
-			keypad_counter = 0;
+			update_max_and_min();
+			display_rms_value = rms_value;
+			display_max_value = max_value;
+			display_min_value = min_value;
 		}
 	}
-	else
-	{
-		if (last_pressed_key != 0)
-		{
-			if (last_pressed_key == '*')
-			{
-				// Press for >= 1 s
-				if (keypad_counter >= 200)
-				{
-					// Enter input phase
-					current_keypad_phase = INPUT_PHASE;
-					disable_display();
-				}
-				else if (current_keypad_phase == INPUT_PHASE)
-				{
-					// Delete last digit
-					if (voltage_digits[1] != 0)
-					{
-						voltage_digits[1] = 0;
-						current_input_digit = 1;
-					}
-					else
-					{
-						voltage_digits[0] = 0;
-						current_input_digit = 0;
-					}
-					desired_output_voltage = convert_user_input_to_desired_range(voltage_digits[0], voltage_digits[1]);
-				}
-			}
-			else if (current_keypad_phase == INPUT_PHASE)
-			{
-				if (last_pressed_key == '#')
-				{
-					// Enter display phase
-					current_keypad_phase = DISPLAY_PHASE;
-				}
-				else if (last_pressed_key != '*' && last_pressed_key != '#')
-				{
-					// User Input
-					voltage_digits[current_input_digit] = last_pressed_key - '0';
-					current_input_digit = (current_input_digit + 1) % 2;
-					desired_output_voltage = convert_user_input_to_desired_range(voltage_digits[0], voltage_digits[1]);
-				}
-			}
-		}
-		keypad_counter = 0;
-	}
-	last_pressed_key = pressed_key;
 }
-
-/**
-  * @brief  Reads the currently pressed keypad key with debouncing.
-  * @retval None
-  */
-void read_keypad_debounce(void)
-{
-	char pressed_key = read_keypad_char();
-	if (pressed_key != last_pressed_key_debounce)
-	{
-		keypad_debounce_ticks = 0;
-	}
-	if (keypad_debounce_ticks > keypad_debounce_delay)
-	{
-			handle_keypad_pressed_key(pressed_key);
-	}
-	last_pressed_key_debounce = pressed_key;
-	keypad_debounce_ticks++;
-}
-
 /* USER CODE END 0 */
 
 /**
@@ -599,20 +297,11 @@ int main(void)
 	HAL_TIM_Base_Start(&htim2);
 	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
 	HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
-	if (HAL_ADC_Start(&hadc1) != HAL_OK)
-	{
-		printf("HAL ADC failed.\n");
-		return 0;
-	}
-	if (HAL_ADC_Start_DMA(&hadc1, adc_readings, 1) != HAL_OK)
-	{
-		printf("HAL ADC DMA failed.\n");
-		return 0;
-	}
+	HAL_ADC_Start(&hadc1);
+	HAL_ADC_Start_DMA(&hadc1, adc_readings, 1);
 	HAL_ADC_Start_IT(&hadc1);
 	GPIO_PinState last_button_state = GPIO_PIN_RESET;
 	GPIO_PinState button_state = GPIO_PIN_RESET;
-	set_DAC_value(1.5); // Set the DAC voltage (PA4)
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -932,71 +621,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) // 10 kHz (every 0.1 ms)
 {
-	if (current_keypad_phase == DISPLAY_PHASE)
-	{
-		adc_counter = (adc_counter + 1) % 1000000;
-		
-		// Every 0.1 ms
-		update_raw_and_filtered_data();
-		
-		// Every 1 ms
-		if (adc_counter % 10 == 0)
-		{
-			// Update RMS value and running MAX and running MIN
-			update_rms_and_running_max_min();
-			float diff = rms_value - desired_output_voltage;
-			int pulse_delta = 0;
-			if (diff >= 1 || diff <= -1)
-			{
-				pulse_delta = 20;
-			}
-			else if (diff >= 0.5f || diff <= -0.5f)
-			{
-				pulse_delta = 15;
-			}
-			else if (diff >= 0.1f || diff <= -0.1f)
-			{
-				pulse_delta = 10;
-			}
-			else if (diff >= 0.05f || diff <= -0.05f)
-			{
-				pulse_delta = 5;
-			}
-			else if (diff >= 0.01f || diff <= -0.01f)
-			{
-				pulse_delta = 2;
-			}
-			else if (diff >= 0.005f || diff <= -0.005f)
-			{
-				pulse_delta = 1;
-			}
-			if (diff > 0)
-			{
-				if (pulse_width >= pulse_delta)
-				{
-					pulse_width -= pulse_delta;
-				}
-				__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, pulse_width);
-			}
-			else if (diff < 0)
-			{
-				if (pulse_width <= TIM3_PERIOD - pulse_delta)
-				{
-					pulse_width += pulse_delta;
-				}
-				__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, pulse_width);
-			}
-		}
-		
-		// Every 50 ms
-		if (adc_counter % 500 == 0)
-		{
-			update_max_and_min();
-			display_rms_value = rms_value;
-			display_max_value = max_value;
-			display_min_value = min_value;
-		}
-	}
+	adc_callback();
 }
 /* USER CODE END 4 */
 

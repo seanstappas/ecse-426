@@ -99,7 +99,18 @@
 
 /* USER CODE BEGIN Private defines */
 #define V_REF 3
+#define INPUT_PHASE 0
+#define DISPLAY_PHASE 1
+#define SLEEP_PHASE 2
+#define TIM3_PERIOD 8400
 extern volatile int systick_flag;
+extern volatile float desired_output_voltage;
+extern volatile int current_keypad_phase;
+extern volatile int voltage_digits[2];
+extern volatile int current_display_mode;
+extern volatile float display_rms_value;
+extern volatile float display_max_value;
+extern volatile float display_min_value;
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

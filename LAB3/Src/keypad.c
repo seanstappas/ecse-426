@@ -83,6 +83,17 @@ void handle_keypad_pressed_key(char pressed_key)
 				keypad_counter = 0;
 			}
 		}
+		else if (pressed_key == '#' && pressed_key == last_pressed_key)
+		{
+			keypad_counter++;
+			// Press for 3 s
+			if (keypad_counter >= 600)
+			{
+				// Enter INPUT phase
+				current_keypad_phase = INPUT_PHASE;
+				keypad_counter = 0;
+			}
+		}
 		else
 		{
 			keypad_counter = 0;

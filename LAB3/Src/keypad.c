@@ -91,7 +91,6 @@ void handle_keypad_pressed_key(char pressed_key)
 			{
 				// Enter INPUT phase
 				current_keypad_phase = INPUT_PHASE;
-				keypad_counter = 0;
 			}
 		}
 		else
@@ -130,7 +129,7 @@ void handle_keypad_pressed_key(char pressed_key)
 			}
 			else if (current_keypad_phase == INPUT_PHASE)
 			{
-				if (last_pressed_key == '#')
+				if (keypad_counter <= 600 && last_pressed_key == '#')
 				{
 					// Enter display phase
 					current_keypad_phase = DISPLAY_PHASE;

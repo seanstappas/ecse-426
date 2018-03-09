@@ -209,12 +209,11 @@ int main(void)
   MX_DMA_Init();
   MX_ADC1_Init();
   MX_DAC_Init();
-  MX_TIM3_Init();
   MX_TIM2_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-	HAL_TIM_Base_Start(&htim2);
-	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
-	HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
+	HAL_TIM_Base_Start(&htim2); // TIM 2 for ADC readings
+	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3); // TIM 3 for PWM
 	HAL_ADC_Start(&hadc1);
 	HAL_ADC_Start_DMA(&hadc1, adc_readings, 1);
 	HAL_ADC_Start_IT(&hadc1);

@@ -15,7 +15,6 @@ char current_keypad_char = 0;
 char last_pressed_key_debounce = 0;
 int current_input_digit = 0;
 
-void disable_display(void);
 float convert_user_input_to_desired_range(int first_digit, int second_digit);
 
 /**
@@ -78,7 +77,6 @@ void handle_keypad_pressed_key(char pressed_key)
 			{
 				// Enter SLEEP phase
 				current_phase = SLEEP_PHASE;
-				disable_display();
 				keypad_counter = 0;
 			}
 		}
@@ -108,7 +106,6 @@ void handle_keypad_pressed_key(char pressed_key)
 				{
 					// Enter INPUT phase
 					current_phase = INPUT_PHASE;
-					disable_display();
 				}
 				else if (current_phase == INPUT_PHASE)
 				{
@@ -164,16 +161,6 @@ void read_keypad_debounce(void)
 	}
 	last_pressed_key_debounce = pressed_key;
 	keypad_debounce_ticks++;
-}
-
-/**
-  * @brief  Turns off the 7 segment display.
-  * @retval None
-  */
-void disable_display(void)
-{
-	HAL_GPIO_WritePin(GPIOE, Digit0_Pin|Digit1_Pin|Digit2_Pin|Digit3_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOD, SegmentA_Pin|SegmentB_Pin|SegmentC_Pin|SegmentD_Pin|SegmentE_Pin|SegmentF_Pin|SegmentG_Pin|SegmentDP_Pin, GPIO_PIN_SET);
 }
 
 /**

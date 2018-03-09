@@ -12,9 +12,7 @@ extern volatile float display_rms_value;
 extern volatile float display_max_value;
 extern volatile float display_min_value;
 
-void display_digit(int digit);
-void display_number(float num);
-void display_desired_voltage(void);
 void display_current_number(void);
+void disable_display(void);
 
 #endif

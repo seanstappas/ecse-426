@@ -13,22 +13,25 @@ void read_button_debounce(void)
 {
 	// Read the B1 button (PA0) with debouncing
 	// Debounce inspired from https://www.arduino.cc/en/Tutorial/Debounce
-	GPIO_PinState reading = HAL_GPIO_ReadPin(Button_GPIO_Port, Button_Pin);
-	if(reading != last_button_state)
+	if (current_phase != SLEEP_PHASE)
 	{
-		button_ticks = 0;
-	}
-	if(button_ticks > BUTTON_DEBOUNCE_DELAY)
-	{
-		if (reading != button_state) {
-			button_state = reading;
-			
-			if (button_state)
-			{
-				current_display_mode = (current_display_mode + 1) % 3;
+		GPIO_PinState reading = HAL_GPIO_ReadPin(Button_GPIO_Port, Button_Pin);
+		if(reading != last_button_state)
+		{
+			button_ticks = 0;
+		}
+		if(button_ticks > BUTTON_DEBOUNCE_DELAY)
+		{
+			if (reading != button_state) {
+				button_state = reading;
+				
+				if (button_state)
+				{
+					current_display_mode = (current_display_mode + 1) % 3;
+				}
 			}
 		}
+		last_button_state = reading;
+		button_ticks++;
 	}
-	last_button_state = reading;
-	button_ticks++;
 }

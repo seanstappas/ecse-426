@@ -74,6 +74,7 @@ int pwm = 0;
 int adc_counter = 0;
 int pulse_width = 50;
 uint32_t adc_readings[1];
+int last_phase = INPUT_PHASE;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -92,6 +93,10 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 /* Private function prototypes -----------------------------------------------*/
 void adc_callback(void);
 void pwm_feedback_control(void);
+void enter_low_power_mode(void);
+void start_peripherals(void);
+void stop_peripherals(void);
+void check_sleep_phase_transition(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -146,7 +151,7 @@ void pwm_feedback_control(void)
 }
 
 /**
-  * @brief  Callback when the ADC is finished converting a value
+  * @brief  Callback when the ADC is finished converting a value.
   * @retval None
   */
 void adc_callback(void) // 10 kHz (every 0.1 ms)
@@ -174,6 +179,70 @@ void adc_callback(void) // 10 kHz (every 0.1 ms)
 			display_min_value = min_value;
 		}
 	}
+}
+
+/**
+  * @brief  Enter low power mode (during SLEEP phase).
+  * @retval None
+  */
+void enter_low_power_mode(void)
+{
+	disable_display();
+	stop_peripherals();
+}
+
+/**
+  * @brief  Start all peripherals.
+  * @retval None
+  */
+void start_peripherals(void)
+{
+	// Start ADC
+	HAL_ADC_Start(&hadc1);
+	HAL_ADC_Start_DMA(&hadc1, adc_readings, 1);
+	HAL_ADC_Start_IT(&hadc1);
+	
+	// Start TIM 2 for ADC readings
+	HAL_TIM_Base_Start(&htim2);
+	
+	// Start TIM 3 for PWM
+	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
+}
+
+/**
+  * @brief  Stop all peripherals.
+  * @retval None
+  */
+void stop_peripherals(void)
+{
+	// Disable ADC
+	HAL_ADC_Stop(&hadc1);
+	HAL_ADC_Stop_DMA(&hadc1);
+	HAL_ADC_Stop_IT(&hadc1);
+	
+	// Disable TIM 2
+	HAL_TIM_Base_Stop(&htim2);
+	
+	// Disable TIM 3
+	HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_3);
+}
+
+/**
+  * @brief  Check if a transition has occurred to/from SLEEP phase. This 
+	*					causes a switch to/from low power mode, respectively.
+  * @retval None
+  */
+void check_sleep_phase_transition(void)
+{
+	if (current_phase == SLEEP_PHASE && last_phase != SLEEP_PHASE)
+	{
+		enter_low_power_mode();
+	}
+	else if (current_phase != SLEEP_PHASE && last_phase == SLEEP_PHASE)
+	{
+		start_peripherals();
+	}
+	last_phase = current_phase;
 }
 /* USER CODE END 0 */
 
@@ -212,11 +281,7 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-	HAL_TIM_Base_Start(&htim2); // TIM 2 for ADC readings
-	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3); // TIM 3 for PWM
-	HAL_ADC_Start(&hadc1);
-	HAL_ADC_Start_DMA(&hadc1, adc_readings, 1);
-	HAL_ADC_Start_IT(&hadc1);
+	start_peripherals();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -226,13 +291,11 @@ int main(void)
 		// Every 5 ms
 		if (systick_flag)
 		{
-			if (current_phase != SLEEP_PHASE)
-			{
-				read_button_debounce();
-				display_current_number();
-			}
-			read_keypad_debounce();
 			systick_flag = 0;
+			read_button_debounce();
+			display_current_number();
+			read_keypad_debounce();
+			check_sleep_phase_transition();
 		}
   /* USER CODE END WHILE */
 

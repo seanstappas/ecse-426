@@ -146,6 +146,10 @@ void pwm_feedback_control(void)
 	}
 }
 
+/**
+  * @brief  Callback when the ADC is finished converting a value
+  * @retval None
+  */
 void adc_callback(void) // 10 kHz (every 0.1 ms)
 {
 	if (current_keypad_phase == DISPLAY_PHASE)

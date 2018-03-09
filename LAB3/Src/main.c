@@ -40,6 +40,7 @@
 #include "stm32f4xx_hal.h"
 
 /* USER CODE BEGIN Includes */
+#include "button.h"
 #include "display.h"
 #include "filter.h"
 #include "keypad.h"
@@ -67,10 +68,9 @@ volatile float desired_output_voltage;
 volatile float rms_value;
 volatile float max_value;
 volatile float min_value;
+int button_ticks = 0;
 uint32_t adc_readings[1];
 int systick_counter = 0;
-int button_ticks = 0;
-int button_debounce_delay = 10;
 int pwm = 0;
 int adc_counter = 0;
 int pulse_width = 50;
@@ -215,33 +215,13 @@ int main(void)
 	HAL_ADC_Start(&hadc1);
 	HAL_ADC_Start_DMA(&hadc1, adc_readings, 1);
 	HAL_ADC_Start_IT(&hadc1);
-	GPIO_PinState last_button_state = GPIO_PIN_RESET;
-	GPIO_PinState button_state = GPIO_PIN_RESET;
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-		// Read the B1 button (PA0) with debouncing
-		// Debounce inspired from https://www.arduino.cc/en/Tutorial/Debounce
-		GPIO_PinState reading = HAL_GPIO_ReadPin(Button_GPIO_Port, Button_Pin);
-		if(reading != last_button_state)
-		{
-			button_ticks = 0;
-		}
-		if(button_ticks > button_debounce_delay)
-		{
-			if (reading != button_state) {
-				button_state = reading;
-				
-				if (button_state)
-				{
-					current_display_mode = (current_display_mode + 1) % 3;
-				}
-			}
-		}
-		last_button_state = reading;
+		read_button(button_ticks);
 		
 		// Every 5 ms
 		if (systick_flag)

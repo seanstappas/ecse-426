@@ -76,7 +76,7 @@ void handle_keypad_pressed_key(char pressed_key)
 			// Press for 3 s
 			if (keypad_counter >= 600)
 			{
-				// Enter sleep phase
+				// Enter SLEEP phase
 				current_phase = SLEEP_PHASE;
 				disable_display();
 				keypad_counter = 0;
@@ -106,7 +106,7 @@ void handle_keypad_pressed_key(char pressed_key)
 				// Press for >= 1 s
 				if (keypad_counter >= 200)
 				{
-					// Enter input phase
+					// Enter INPUT phase
 					current_phase = INPUT_PHASE;
 					disable_display();
 				}
@@ -130,12 +130,12 @@ void handle_keypad_pressed_key(char pressed_key)
 			{
 				if (keypad_counter <= 600 && last_pressed_key == '#')
 				{
-					// Enter display phase
+					// Enter DISPLAY phase
 					current_phase = DISPLAY_PHASE;
 				}
 				else if (last_pressed_key != '*' && last_pressed_key != '#')
 				{
-					// User Input
+					// Handle user input
 					voltage_digits[current_input_digit] = last_pressed_key - '0';
 					current_input_digit = (current_input_digit + 1) % 2;
 					desired_output_voltage = convert_user_input_to_desired_range(voltage_digits[0], voltage_digits[1]);

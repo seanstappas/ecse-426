@@ -40,8 +40,8 @@
 #include "stm32f4xx_hal.h"
 
 /* USER CODE BEGIN Includes */
-#include "arm_math.h"
 #include "display.h"
+#include "filter.h"
 #include "keypad.h"
 /* USER CODE END Includes */
 
@@ -64,33 +64,17 @@ volatile float display_rms_value;
 volatile float display_max_value;
 volatile float display_min_value;
 volatile float desired_output_voltage;
+volatile float rms_value;
+volatile float max_value;
+volatile float min_value;
 uint32_t adc_readings[1];
 int systick_counter = 0;
-float adc_value = 0.0;
 int button_ticks = 0;
 int button_debounce_delay = 10;
 int pwm = 0;
 int adc_counter = 0;
 int pulse_width = 50;
 uint32_t adc_readings[1];
-float rms_value;
-float max_value;
-float min_value;
-float filtered_data[10];
-float running_min = 5;
-float running_max = 0;
-float raw_data[10];
-float fir_coeff[10] = {
-	-0.0490319314416,
-	-0.0698589404353,
-	0.0145608566286,
-	0.213556898362,
-	0.390773116886,
-	0.390773116886,
-	0.213556898362,
-	0.0145608566286,
-	-0.0698589404353,
-	-0.0490319314416};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -108,143 +92,74 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
 void adc_callback(void);
+void pwm_feedback_control(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
-
 /**
-  * @brief  Updates the RMS, running MAX and running MIN based on the filtered data array.
+  * @brief  Updated the pulse width to obtain the desired output voltage.
   * @retval None
   */
-void update_rms_and_running_max_min(void){
-	// RMS
-	arm_rms_f32(filtered_data, 10, &rms_value);
-	// MAX & INDEX
-	float32_t max;
-	uint32_t maxIndex;
-	arm_max_f32(filtered_data, 10, &max, &maxIndex);
-	// MIN & INDEX
-	float32_t min;
-	uint32_t minIndex;
-	arm_min_f32(filtered_data, 10, &min, &minIndex);
-	if(running_max<max){
-		running_max = max;
-	}
-	if(running_min>min){
-		running_min = min;
-	}
-}
-
-/**
-  * @brief  Processes the raw ADC data with an FIR filter, returning the filtered value.
-  * @retval The filtered value based on the previous ADC readings.
-  */
-float fir_filter(void)
+void pwm_feedback_control(void)
 {
-	int order = 10;
-	float sum = 0;
-	for(int i = 0; i<order;i++){
-		sum+=fir_coeff[i]*raw_data[i];
-	}
-	return sum;
-}
-
-/**
-  * @brief  Updates the raw data vector and the filtered data vector.
-  * @retval None
-  */
-void update_raw_and_filtered_data(void)
-{	
-	// Shift raw data array up
-	for (int i = 1; i < 10; i++)
+	float diff = rms_value - desired_output_voltage;
+	int pulse_delta = 0;
+	if (diff >= 1 || diff <= -1)
 	{
-		raw_data[i] = raw_data[i - 1];
+		pulse_delta = 20;
 	}
-	
-	// Sample raw ADC data
-	raw_data[0] = (adc_readings[0] / 1023.0) * V_REF;
-	
-	// Shift filtered data array up
-	for (int i = 1; i < 10; i++)
+	else if (diff >= 0.5f || diff <= -0.5f)
 	{
-		filtered_data[i] = filtered_data[i - 1];
+		pulse_delta = 15;
 	}
-	
-	// Update filtered data
-	filtered_data[0] = fir_filter();
+	else if (diff >= 0.1f || diff <= -0.1f)
+	{
+		pulse_delta = 10;
+	}
+	else if (diff >= 0.05f || diff <= -0.05f)
+	{
+		pulse_delta = 5;
+	}
+	else if (diff >= 0.01f || diff <= -0.01f)
+	{
+		pulse_delta = 2;
+	}
+	else if (diff >= 0.005f || diff <= -0.005f)
+	{
+		pulse_delta = 1;
+	}
+	if (diff > 0)
+	{
+		if (pulse_width >= pulse_delta)
+		{
+			pulse_width -= pulse_delta;
+		}
+		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, pulse_width);
+	}
+	else if (diff < 0)
+	{
+		if (pulse_width <= TIM3_PERIOD - pulse_delta)
+		{
+			pulse_width += pulse_delta;
+		}
+		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, pulse_width);
+	}
 }
 
-/**
-  * @brief  Updates the max and min values.
-  * @retval None
-  */
-void update_max_and_min(void)
-{
-	// Update MAX and MIN values
-	max_value = running_max;
-	min_value = running_min;
-	
-	// Reset running MIN and MAX values
-	running_max = 0;
-	running_min = 5;
-}
-
-void adc_callback(void)
+void adc_callback(void) // 10 kHz (every 0.1 ms)
 {
 	if (current_keypad_phase == DISPLAY_PHASE)
 	{
 		adc_counter = (adc_counter + 1) % 1000000;
 		
 		// Every 0.1 ms
-		update_raw_and_filtered_data();
+		update_raw_and_filtered_data(adc_readings[0]);
 		
 		// Every 1 ms
 		if (adc_counter % 10 == 0)
 		{
-			// Update RMS value and running MAX and running MIN
 			update_rms_and_running_max_min();
-			float diff = rms_value - desired_output_voltage;
-			int pulse_delta = 0;
-			if (diff >= 1 || diff <= -1)
-			{
-				pulse_delta = 20;
-			}
-			else if (diff >= 0.5f || diff <= -0.5f)
-			{
-				pulse_delta = 15;
-			}
-			else if (diff >= 0.1f || diff <= -0.1f)
-			{
-				pulse_delta = 10;
-			}
-			else if (diff >= 0.05f || diff <= -0.05f)
-			{
-				pulse_delta = 5;
-			}
-			else if (diff >= 0.01f || diff <= -0.01f)
-			{
-				pulse_delta = 2;
-			}
-			else if (diff >= 0.005f || diff <= -0.005f)
-			{
-				pulse_delta = 1;
-			}
-			if (diff > 0)
-			{
-				if (pulse_width >= pulse_delta)
-				{
-					pulse_width -= pulse_delta;
-				}
-				__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, pulse_width);
-			}
-			else if (diff < 0)
-			{
-				if (pulse_width <= TIM3_PERIOD - pulse_delta)
-				{
-					pulse_width += pulse_delta;
-				}
-				__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, pulse_width);
-			}
+			pwm_feedback_control();
 		}
 		
 		// Every 50 ms

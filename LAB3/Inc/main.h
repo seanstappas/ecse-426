@@ -111,6 +111,9 @@ extern volatile int current_display_mode;
 extern volatile float display_rms_value;
 extern volatile float display_max_value;
 extern volatile float display_min_value;
+extern volatile float rms_value;
+extern volatile float max_value;
+extern volatile float min_value;
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

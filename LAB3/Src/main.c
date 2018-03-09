@@ -223,7 +223,7 @@ void stop_peripherals(void)
 	// Disable TIM 2
 	HAL_TIM_Base_Stop(&htim2);
 	
-	// Disable TIM 3
+	// Disable PWM
 	HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_3);
 }
 

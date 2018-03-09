@@ -6,7 +6,7 @@
 #define DISPLAY_MODE_MIN 2
 
 extern volatile int current_display_mode;
-extern volatile int current_keypad_phase;
+extern volatile int current_phase;
 extern volatile int voltage_digits[2];
 extern volatile float display_rms_value;
 extern volatile float display_max_value;

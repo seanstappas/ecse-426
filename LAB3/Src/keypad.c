@@ -13,7 +13,6 @@ int keypad_counter = 0;
 int keypad_debounce_ticks = 0;
 char current_keypad_char = 0;
 char last_pressed_key_debounce = 0;
-int keypad_debounce_delay = 10;
 int current_input_digit = 0;
 
 void disable_display(void);
@@ -78,7 +77,7 @@ void handle_keypad_pressed_key(char pressed_key)
 			if (keypad_counter >= 600)
 			{
 				// Enter sleep phase
-				current_keypad_phase = SLEEP_PHASE;
+				current_phase = SLEEP_PHASE;
 				disable_display();
 				keypad_counter = 0;
 			}
@@ -90,7 +89,7 @@ void handle_keypad_pressed_key(char pressed_key)
 			if (keypad_counter >= 600)
 			{
 				// Enter INPUT phase
-				current_keypad_phase = INPUT_PHASE;
+				current_phase = INPUT_PHASE;
 			}
 		}
 		else
@@ -108,10 +107,10 @@ void handle_keypad_pressed_key(char pressed_key)
 				if (keypad_counter >= 200)
 				{
 					// Enter input phase
-					current_keypad_phase = INPUT_PHASE;
+					current_phase = INPUT_PHASE;
 					disable_display();
 				}
-				else if (current_keypad_phase == INPUT_PHASE)
+				else if (current_phase == INPUT_PHASE)
 				{
 					// Delete last digit
 					if (voltage_digits[1] != 0)
@@ -127,12 +126,12 @@ void handle_keypad_pressed_key(char pressed_key)
 					desired_output_voltage = convert_user_input_to_desired_range(voltage_digits[0], voltage_digits[1]);
 				}
 			}
-			else if (current_keypad_phase == INPUT_PHASE)
+			else if (current_phase == INPUT_PHASE)
 			{
 				if (keypad_counter <= 600 && last_pressed_key == '#')
 				{
 					// Enter display phase
-					current_keypad_phase = DISPLAY_PHASE;
+					current_phase = DISPLAY_PHASE;
 				}
 				else if (last_pressed_key != '*' && last_pressed_key != '#')
 				{
@@ -159,7 +158,7 @@ void read_keypad_debounce(void)
 	{
 		keypad_debounce_ticks = 0;
 	}
-	if (keypad_debounce_ticks > keypad_debounce_delay)
+	if (keypad_debounce_ticks > KEYPAD_DEBOUNCE_DELAY)
 	{
 			handle_keypad_pressed_key(pressed_key);
 	}

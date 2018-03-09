@@ -3,13 +3,13 @@
 
 GPIO_PinState last_button_state = GPIO_PIN_RESET;
 GPIO_PinState button_state = GPIO_PIN_RESET;
+int button_ticks = 0;
 
 /**
   * @brief  Reads the B1 button with debouncing.
-  * @param  button_ticks: The number of elapsed button ticks.
   * @retval None
   */
-void read_button(int button_ticks)
+void read_button_debounce(void)
 {
 	// Read the B1 button (PA0) with debouncing
 	// Debounce inspired from https://www.arduino.cc/en/Tutorial/Debounce
@@ -30,4 +30,5 @@ void read_button(int button_ticks)
 		}
 	}
 	last_button_state = reading;
+	button_ticks++;
 }

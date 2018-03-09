@@ -58,7 +58,7 @@ TIM_HandleTypeDef htim3;
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 volatile int systick_flag = 0;
-volatile int current_keypad_phase = INPUT_PHASE;
+volatile int current_phase = INPUT_PHASE;
 volatile int current_display_mode = DISPLAY_MODE_RMS;
 volatile int voltage_digits[2];
 volatile float display_rms_value;
@@ -68,7 +68,6 @@ volatile float desired_output_voltage;
 volatile float rms_value;
 volatile float max_value;
 volatile float min_value;
-int button_ticks = 0;
 uint32_t adc_readings[1];
 int systick_counter = 0;
 int pwm = 0;
@@ -152,7 +151,7 @@ void pwm_feedback_control(void)
   */
 void adc_callback(void) // 10 kHz (every 0.1 ms)
 {
-	if (current_keypad_phase == DISPLAY_PHASE)
+	if (current_phase == DISPLAY_PHASE)
 	{
 		adc_counter = (adc_counter + 1) % 1000000;
 		
@@ -225,21 +224,16 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-		read_button(button_ticks);
-		
 		// Every 5 ms
 		if (systick_flag)
 		{
-			// Reset flag
-			systick_flag = 0;
-			
-			// Display on 7 segment display
-			display_current_number();
-			
-			// Update counters
-			button_ticks++;
-			
+			if (current_phase != SLEEP_PHASE)
+			{
+				read_button_debounce();
+				display_current_number();
+			}
 			read_keypad_debounce();
+			systick_flag = 0;
 		}
   /* USER CODE END WHILE */
 

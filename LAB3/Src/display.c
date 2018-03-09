@@ -132,7 +132,7 @@ void display_desired_voltage()
   */
 void display_current_number(void)
 {	
-	if (current_keypad_phase == DISPLAY_PHASE)
+	if (current_phase == DISPLAY_PHASE)
 	{
 		switch(current_display_mode)
 		{
@@ -147,7 +147,7 @@ void display_current_number(void)
 				break;
 		}
 	}
-	else if (current_keypad_phase == INPUT_PHASE)
+	else if (current_phase == INPUT_PHASE)
 	{
 		display_desired_voltage();
 	}

@@ -105,7 +105,7 @@
 #define TIM3_PERIOD 8400
 extern volatile int systick_flag;
 extern volatile float desired_output_voltage;
-extern volatile int current_keypad_phase;
+extern volatile int current_phase;
 extern volatile int voltage_digits[2];
 extern volatile int current_display_mode;
 extern volatile float display_rms_value;

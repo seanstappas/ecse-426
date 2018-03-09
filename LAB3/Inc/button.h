@@ -5,6 +5,6 @@
 
 extern volatile int current_display_mode;
 
-void read_button(int button_ticks);
+void read_button_debounce(void);
 
 #endif

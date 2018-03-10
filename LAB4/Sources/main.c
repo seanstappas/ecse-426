@@ -229,14 +229,6 @@ void check_sleep_phase_transition(void)
 	}
 	last_phase = current_phase;
 }
-
-void main_loop(void)
-{	
-	read_button_debounce();
-	display_current_number();
-	read_keypad_debounce();
-	check_sleep_phase_transition();
-}
 /* USER CODE END 0 */
 
 void thread_button (void const *argument);

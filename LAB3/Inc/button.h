@@ -14,6 +14,7 @@
 #define BUTTON_DEBOUNCE_DELAY 10
 
 extern volatile int current_display_mode;
+extern volatile int current_phase;
 
 void read_button_debounce(void);
 

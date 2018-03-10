@@ -1,3 +1,13 @@
+/**
+	******************************************************************************
+  * @file    keypad.c
+  * @author  Sean Stappas and Eric Vuong
+  * @version V1.0.0
+  * @date    09-March-2018
+  * @brief   Controls the 4x3 keypad and the associated phase changes.
+  ******************************************************************************
+  */
+	
 #include "stm32f4xx_hal.h"
 #include "keypad.h"
 

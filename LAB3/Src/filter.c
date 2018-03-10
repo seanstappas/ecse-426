@@ -1,3 +1,13 @@
+/**
+	******************************************************************************
+  * @file    filter.c
+  * @author  Sean Stappas and Eric Vuong
+  * @version V1.0.0
+  * @date    09-March-2018
+  * @brief   Controls the FIR filter, RMS, MAX and MIN operations.
+  ******************************************************************************
+  */
+	
 #include "stm32f4xx_hal.h"
 #include "arm_math.h"
 #include "filter.h"

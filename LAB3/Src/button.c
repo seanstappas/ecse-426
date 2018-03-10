@@ -1,3 +1,13 @@
+/**
+	******************************************************************************
+  * @file    button.c
+  * @author  Sean Stappas and Eric Vuong
+  * @version V1.0.0
+  * @date    09-March-2018
+  * @brief   Controls the button debouncing and reading.
+  ******************************************************************************
+  */
+	
 #include "stm32f4xx_hal.h"
 #include "button.h"
 

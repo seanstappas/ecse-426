@@ -1,3 +1,13 @@
+/**
+	******************************************************************************
+  * @file    display.h
+  * @author  Sean Stappas and Eric Vuong
+  * @version V1.0.0
+  * @date    09-March-2018
+  * @brief   Header file for the 7 segment display.
+  ******************************************************************************
+  */
+
 #ifndef __DISPLAY_H__
 #define __DISPLAY_H__
 

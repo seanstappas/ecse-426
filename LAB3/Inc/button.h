@@ -1,3 +1,13 @@
+/**
+	******************************************************************************
+  * @file    button.h
+  * @author  Sean Stappas and Eric Vuong
+  * @version V1.0.0
+  * @date    09-March-2018
+  * @brief   Header file for the button control.
+  ******************************************************************************
+  */
+	
 #ifndef __BUTTON_H__
 #define __BUTTON_H__
 

@@ -1,3 +1,13 @@
+/**
+	******************************************************************************
+  * @file    filter.h
+  * @author  Sean Stappas and Eric Vuong
+  * @version V1.0.0
+  * @date    09-March-2018
+  * @brief   Header file for the filter.
+  ******************************************************************************
+  */
+
 #ifndef __FILTER_H__
 #define __FILTER_H__
 

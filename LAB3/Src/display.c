@@ -1,9 +1,16 @@
+/**
+	******************************************************************************
+  * @file    display.c
+  * @author  Sean Stappas and Eric Vuong
+  * @version V1.0.0
+  * @date    09-March-2018
+  * @brief   Controls the 7-segment display. Note that pins PD0 to PD7 represent
+	*					 segments and pins PE0 to PE3 represent the digits.
+  ******************************************************************************
+  */
+	
 #include "stm32f4xx_hal.h"
 #include "display.h"
-
-// 7-Segment Display
-// Pins PD0 to PD7: Segments
-// Pins PE0 to PE3: Digits
 
 int current_display_digit = 0;
 

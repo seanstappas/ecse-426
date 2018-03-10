@@ -1,3 +1,13 @@
+/**
+	******************************************************************************
+  * @file    keypad.h
+  * @author  Sean Stappas and Eric Vuong
+  * @version V1.0.0
+  * @date    09-March-2018
+  * @brief   Header file for the keypad control.
+  ******************************************************************************
+  */
+	
 #ifndef __KEYPAD_H__
 #define __KEYPAD_H__
 

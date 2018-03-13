@@ -16,8 +16,6 @@
 \usepackage[nameinlink]{cleveref}
 \usepackage{todonotes}
 %equations https://www.rpi.edu/dept/arc/training/latex/LaTeX_symbols.pdf
-%TODO: FSM picture
-%TODO: keypad pictures
 
 % Custom commands
 \newcommand\numberthis{\addtocounter{equation}{1}\tag{\theequation}}
@@ -102,6 +100,17 @@ For the 4x3 keypad, each pins corresponds to a column or row, for a total of 7 p
 
 \subsection{Multi-threading}
 As part of lab 4, the aforementioned functionalities would have to be integrated and operating concurrently through the CMSIS-RTOS \todo{RTX-based?} by multi-threading components. In other words, the PWM pulse generator, ADC sampling and controls, and the keypad would be functioning in parallel.
+The CMSIS RTOS allows the creation of multiple threads, which can operate in 4 different states: READY, WAITING, RUNNING, and INACTIVE.
+
+It is also important to note that multiple threads may try to access a common resource at any point in time. Thus, undesirable situations, such as race condition may arise when two or more operations are performed at the same time. To solve this problem, instantiating mutual exclusions to global variables, so that other threads must wait until the global variable is available.
+
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/active_threads.png}
+  \caption{Thread State Transistions \cite{lab4_tutorial}.}
+  \label{fig:active_threads}
+\end{figure}
+
 
 \section{Implementation}
 The peripheral configurations of the board were done using the STM32CubeMx software. This helped us speed up the set-up process for time controlled PWM, keypad GPIO pins, 7-segment display pins, and the time triggered ADC with DMA. \Cref{fig:circuit_lab3} shows an overview of the various implementations of the circuit. There were various design constraint that had to be taken into consideration during the implementation.  Similar to lab 1-2, a blue button (push button in \Cref{fig:circuit_lab3}) was used to switch the display settings between the processed RMS voltage, max and min values.
@@ -126,7 +135,14 @@ The pinout configuration used can be seen in \todo{update the pin-out}, the deta
 \subsection{Keypad}
 As aforementioned, the keypad provided for the lab was a 4x3 keypad, with digits ranging from 0-9 with 2 special characters: '*' and '\#'. Since the keypad pins are wired in a way such that each key pressed would connect a row and a column together.
 
-In this way, a scanning algorithm could be used to determine with key was pressed. To do so, we would have to write on the rows and read from the column pins. Moreover, we would be writing to the rows in a specific way and reading from the columns, which are initially set to '0' with the pull-down resistors being used to fix the initial states to be logic '0'. At any instant, only one pin of the 4 columns was set to '1' and the rest were set to '0'. When a button was pressed, only one of the column would turn '1', thus allowing us to determine which row and column has been pressed. This method is effective when the columns and rows were scanned at a fast enough frequency, such that duration of a button pressed lasts an entire scan cycle. Similar to lab 1-2, a debouncer has been implemented whenever a new button is pressed.
+In this way, a scanning algorithm could be used to determine with key was pressed. To do so, we would have to write on the rows and read from the column pins. \Cref{fig:keypad_pins} shows the pin configurations for the rows and columns of the keypad. Moreover, we would be writing to the rows in a specific way and reading from the columns, which are initially set to '0' with the pull-down resistors being used to fix the initial states to be logic '0'. At any instant, only one pin of the 4 columns was set to '1' and the rest were set to '0'. When a button was pressed, only one of the column would turn '1', thus allowing us to determine which row and column has been pressed. This method is effective when the columns and rows were scanned at a fast enough frequency, such that duration of a button pressed lasts an entire scan cycle. Similar to lab 1-2, a debouncer has been implemented whenever a new button is pressed.
+
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/keypad_pins.png}
+  \caption
+{Keypad pin configurations with the keys faced up.}  \label{fig:keypad_pins}
+\end{figure}
 
 \subsection{Timer Triggered ADC with DMA}
 A TIM peripheral timer could be used to trigger ADC readings. Some configurations were needed to setup the ADC to be triggered with timers. The ADC would need an external source, such as a timer to trigger the ADC for a new conversion. However, doing so would require the user to wait for the end of conversion before reading the data. Note that timers also has channels to use in PWM mode, generating pulse on a GPIO pin, which will be discussed later. When reading from the ADC, it was important to set the correct timer frequency. The timer would have to be triggering the ADC at a rate faster than the PWM pulses.  \todo {did we have any issue, with the timer being too fast?}. The frequency of the timer was calculated with the specific bus clock value of the timer, prescaler and period value as follows:
@@ -178,7 +194,6 @@ With the keypad implemented, the functionality of the board had to be functionin
 \end{figure}
 
 \subsection{Sleep mode \& Power Consumptions}
-% TODO: cite the Book
 
 One of the benefits of using a Cortex -M microcontrollers is that they are power efficient \cite{yiu}. Moreover, the STM32CubeMx provided us with power consumption measurement tools. Thus, it was easier to make the board as power efficient as possible in the sleep phase. Thus, the ADC, PWM, 7-segment GPIOS and timers were turned off. In the multi-threaded implementation, which will be discussed later, all the above mentioned threads were terminated.
 \todo{Sean, could you maybe elaborate a bit on this one, if there were some tricks on the STM32CubeMx regarding power consumption}
@@ -195,6 +210,11 @@ The same 7-segment display configurations from lab 1 and 2 were used for this la
 \end{figure}
 
 For reference, the display mode of operations (RMS, Max, Min) were represented by the first digit of the 7-segment display was used. The RMS, Max and Min modes are thus represented by digits 0, 1 and 2, respectively. In each mode, the remaining 3 digits represent the desired number, with two decimal places.
+
+\subsection{Multi-threading}
+As of lab 4, all components from lab 3 had to be as modular as possible. Thus, the prior labs' code has been refactored. In this way, we could create multiple threads. Four threads were created for this lab: Button, Display, Keypad and the Sleep Mode Checker. Race condition wasn't an issue during the implementation, since it was only the keypad thread that wrote to the state. All other existing threads were read-only.  The following figure shows the thread diagram of the board.
+%TODO: thread diagram
+
 
 \section{Testing and Observations}
 

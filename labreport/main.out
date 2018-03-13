@@ -13,6 +13,7 @@
 \BOOKMARK [2][-]{subsection.4.5}{System State Transistions}{section.4}% 13
 \BOOKMARK [2][-]{subsection.4.6}{Sleep mode \046 Power Consumptions}{section.4}% 14
 \BOOKMARK [2][-]{subsection.4.7}{7-Segment Display}{section.4}% 15
-\BOOKMARK [1][-]{section.5}{Testing and Observations}{}% 16
-\BOOKMARK [1][-]{section.6}{Conclusion}{}% 17
-\BOOKMARK [1][-]{section*.15}{References}{}% 18
+\BOOKMARK [2][-]{subsection.4.8}{Multi-threading}{section.4}% 16
+\BOOKMARK [1][-]{section.5}{Testing and Observations}{}% 17
+\BOOKMARK [1][-]{section.6}{Conclusion}{}% 18
+\BOOKMARK [1][-]{section*.17}{References}{}% 19

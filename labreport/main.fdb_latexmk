@@ -1,12 +1,12 @@
 # Fdb version 3
-["bibtex main"] 1520974622 "main.aux" "main.bbl" "main" 1520974624
+["bibtex main"] 1520975397 "main.aux" "main.bbl" "main" 1520975399
   "/usr/local/texlive/2017/texmf-dist/bibtex/bst/IEEEtran/IEEEtran.bst" 1480098433 57748 7c8250ecf02814ce6ddc0cdbb63df1dd ""
   "bibliography.bib" 1520972141 1285 86352b9c33e073ee14f9e873d95b1e90 ""
-  "main.aux" 1520974624 8021 734aeb0b47e2d8533513082a66a960d8 ""
+  "main.aux" 1520975399 8111 75acedfcfbde14dd23b3b1f1e1717705 ""
   (generated)
   "main.blg"
   "main.bbl"
-["pdflatex"] 1520974622 "main.tex" "main.pdf" "main" 1520974624
+["pdflatex"] 1520975397 "main.tex" "main.pdf" "main" 1520975399
   "/usr/local/texlive/2017/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc" 1480098666 2900 1537cc8184ad1792082cd229ecc269f4 ""
   "/usr/local/texlive/2017/texmf-dist/fonts/map/fontname/texfonts.map" 1480098670 3287 e6b82fe08f5336d4d5ebc73fb1152e87 ""
   "/usr/local/texlive/2017/texmf-dist/fonts/tfm/jknappen/ec/tcrm0500.tfm" 1480098696 1536 b3387106d9afecbfe14bde2de6eadf47 ""
@@ -205,12 +205,12 @@
   "figures/pinout.png" 1520969026 107798 d6deab35ac77bb47505d55f48924ed95 ""
   "figures/rectifier_circuit.png" 1520969026 43333 32b678dbd7030381a05cb76f5e1a901f ""
   "figures/state_transitions.png" 1520969389 42527 10ce1a2fd9aa648f33dddee758690cc8 ""
-  "main.aux" 1520974624 8021 734aeb0b47e2d8533513082a66a960d8 ""
-  "main.bbl" 1520974622 1556 7299e446f4af5b4c6696fc8663a94a47 "bibtex main"
-  "main.out" 1520974624 1189 4f482449cd1fa21d67b4b5da01ac70eb ""
-  "main.tex" 1520974620 18353 d71955632d1bdb6592d54a81be1131e5 ""
+  "main.aux" 1520975399 8111 75acedfcfbde14dd23b3b1f1e1717705 ""
+  "main.bbl" 1520975397 1556 7299e446f4af5b4c6696fc8663a94a47 "bibtex main"
+  "main.out" 1520975399 1249 42b5e2c97646f423174ff13bf16ce7d4 ""
+  "main.tex" 1520975394 18773 cecc53333e6ec4cc39b72526bd2947b2 ""
   (generated)
-  "main.pdf"
   "main.aux"
-  "main.log"
   "main.out"
+  "main.pdf"
+  "main.log"

@@ -102,7 +102,7 @@ For the 4x3 keypad, each pins corresponds to a column or row, for a total of 7 p
 As part of lab 4, the aforementioned functionalities would have to be integrated and operating concurrently through the CMSIS-RTOS \todo{RTX-based?} by multi-threading components. In other words, the PWM pulse generator, ADC sampling and controls, and the keypad would be functioning in parallel.
 The CMSIS RTOS allows the creation of multiple threads, which can operate in 4 different states: READY, WAITING, RUNNING, and INACTIVE.
 
-It is also important to note that multiple threads may try to access a common resource at any point in time. Thus, undesirable situations, such as race condition may arise when two or more operations are performed at the same time. To solve this problem, instantiating mutual exclusions to global variables, so that other threads must wait until the global variable is available.
+It is also important to note that multiple threads may try to access a common resource at any point in time. Thus, undesirable situations, such as race condition may arise when two or more operations are performed at the same time. To solve this problem, instantiating mutual exclusions to global variables, so that other threads must wait until the global variable is available. Inter-thread communications is also possible with explicit communication, such as messages, signal events or mailboxes.
 
 \begin{figure}[!htb]
   \centering
@@ -110,6 +110,10 @@ It is also important to note that multiple threads may try to access a common re
   \caption{Thread State Transistions \cite{lab4_tutorial}.}
   \label{fig:active_threads}
 \end{figure}
+
+\subsection{Hypothesis}
+
+With the right configurations, component selections for the RC circuit and correct means of inter-thread communications, and power reduction efforts, the board shall be able to display the desired voltage from user input, given an acceptable range, while using multi-threading.
 
 
 \section{Implementation}
@@ -212,7 +216,7 @@ The same 7-segment display configurations from lab 1 and 2 were used for this la
 For reference, the display mode of operations (RMS, Max, Min) were represented by the first digit of the 7-segment display was used. The RMS, Max and Min modes are thus represented by digits 0, 1 and 2, respectively. In each mode, the remaining 3 digits represent the desired number, with two decimal places.
 
 \subsection{Multi-threading}
-As of lab 4, all components from lab 3 had to be as modular as possible. Thus, the prior labs' code has been refactored. In this way, we could create multiple threads. Four threads were created for this lab: Button, Display, Keypad and the Sleep Mode Checker. Race condition wasn't an issue during the implementation, since it was only the keypad thread that wrote to the state. All other existing threads were read-only.  The following figure shows the thread diagram of the board.
+As of lab 4, all components from lab 3 had to be as modular as possible for multithreading. Thus, the prior labs' code has been refactored. In this way, we could create multiple threads. Four threads were created for this lab: Button, Display, Keypad and the Sleep Mode Checker. Race condition wasn't an issue during the implementation, since it was only the keypad thread that wrote to the state. All other existing threads were read-only.  The following figure shows the thread diagram of the board.
 %TODO: thread diagram
 
 

@@ -1,12 +1,12 @@
 # Fdb version 3
-["bibtex main"] 1520960767 "main.aux" "main.bbl" "main" 1520960767
+["bibtex main"] 1520971112 "main.aux" "main.bbl" "main" 1520971115
   "/usr/local/texlive/2017/texmf-dist/bibtex/bst/IEEEtran/IEEEtran.bst" 1480098433 57748 7c8250ecf02814ce6ddc0cdbb63df1dd ""
-  "bibliography.bib" 1520969026 710 562d7a0c9da735db9b9422bae6bb925a ""
-  "main.aux" 1520960750 6694 776cf1a11adc88fc7a75713fc940b31e ""
+  "bibliography.bib" 1520971065 1209 d5974de77f41a4958ef3ea7761bd18ac ""
+  "main.aux" 1520971114 7196 ef394c77f3fb30ba74e90632001062b3 ""
   (generated)
   "main.blg"
   "main.bbl"
-["pdflatex"] 1520960767 "main.tex" "main.pdf" "main" 1520960767
+["pdflatex"] 1520971113 "main.tex" "main.pdf" "main" 1520971115
   "/usr/local/texlive/2017/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc" 1480098666 2900 1537cc8184ad1792082cd229ecc269f4 ""
   "/usr/local/texlive/2017/texmf-dist/fonts/map/fontname/texfonts.map" 1480098670 3287 e6b82fe08f5336d4d5ebc73fb1152e87 ""
   "/usr/local/texlive/2017/texmf-dist/fonts/tfm/jknappen/ec/tcrm0500.tfm" 1480098696 1536 b3387106d9afecbfe14bde2de6eadf47 ""
@@ -39,8 +39,10 @@
   "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb" 1480098733 36281 c355509802a035cadc5f15869451dcee ""
   "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb" 1480098733 35752 024fb6c41858982481f6968b5fc26508 ""
   "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb" 1480098733 32722 d7379af29a190c3f453aba36302ff5a9 ""
+  "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb" 1480098733 32762 224316ccc9ad3ca0423a14971cfa7fc1 ""
   "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb" 1480098733 32569 5e5ddc8df908dea60932f3c484a54c0d ""
   "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy5.pfb" 1480098733 32915 7bf7720c61a5b3a7ff25b0964421c9b6 ""
+  "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb" 1480098733 32716 08e384dc442464e7285e891af9f45947 ""
   "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb" 1480098733 37944 359e864bd06cde3b1cf57bb20757fb06 ""
   "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/cm-super/sfrm1000.pfb" 1480098737 138258 6525c253f16cededa14c7fd0da7f67b2 ""
   "/usr/local/texlive/2017/texmf-dist/tex/context/base/mkii/supp-pdf.mkii" 1480098806 71627 94eb9990bed73c364d7f53f960cc8c5b ""
@@ -200,12 +202,13 @@
   "figures/high_level_circuit_lab3.png" 1520969026 23993 65be94c6110ec0ebc4ea5dcb9270aaa9 ""
   "figures/pinout.png" 1520969026 107798 d6deab35ac77bb47505d55f48924ed95 ""
   "figures/rectifier_circuit.png" 1520969026 43333 32b678dbd7030381a05cb76f5e1a901f ""
-  "main.aux" 1520960750 6694 776cf1a11adc88fc7a75713fc940b31e ""
-  "main.bbl" 1520960767 943 353cf327eeb5e25b216f10aac38c9ab7 "bibtex main"
-  "main.out" 1520960750 965 8f069d57b1cdbc30f90854aefa5e46cf ""
-  "main.tex" 1520960746 16339 c546fec94c1e97c6c5fa3813b3ef9515 ""
+  "figures/state_transitions.png" 1520969389 42527 10ce1a2fd9aa648f33dddee758690cc8 ""
+  "main.aux" 1520971114 7196 ef394c77f3fb30ba74e90632001062b3 ""
+  "main.bbl" 1520971113 1489 0a1c0a60f29ff70e7167dc2f66d94754 "bibtex main"
+  "main.out" 1520971114 1124 d30c44e2a758b3ad6f4b4dd87131e6a3 ""
+  "main.tex" 1520971099 17099 59f61f2795c3801c69a662a396805753 ""
   (generated)
-  "main.aux"
   "main.log"
-  "main.pdf"
   "main.out"
+  "main.pdf"
+  "main.aux"

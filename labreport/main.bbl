@@ -24,4 +24,18 @@
 \bibitem{lab3_handout}
 McGill, ``{ECSE426} {L}ab 3 {H}andout.''
 
+\bibitem{pwm_rc_citation}
+\BIBentryALTinterwordspacing
+M.~Lemmon, ``What is the rc circuit's response to a pwm signal?'' [Online].
+  Available:
+  \url{https://www3.nd.edu/~lemmon/courses/ee224/web-manual/web-manual/lab8a/node5.html}
+\BIBentrySTDinterwordspacing
+
+\bibitem{yiu}
+\BIBentryALTinterwordspacing
+J.~Yiu, ``The definitive guide to arm® cortex®-m0 and cortex-m0 processors.''
+  [Online]. Available:
+  \url{https://books.google.com/books/about/The_Definitive_Guide_to_ARM_Cortex_M0_an.html?id=l9RtBgAAQBAJ}
+\BIBentrySTDinterwordspacing
+
 \end{thebibliography}

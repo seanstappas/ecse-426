@@ -188,7 +188,7 @@ void start_peripherals(void)
 	HAL_ADC_Start_IT(&hadc1);
 	
 	// Start TIM 2 for ADC readings
-	//HAL_TIM_Base_Start(&htim2); // TODO: Why does this crash execution?
+	HAL_TIM_Base_Start(&htim2);
 	
 	// Start TIM 3 for PWM
 	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
@@ -202,7 +202,7 @@ void stop_peripherals(void)
 {
 	// Disable ADC
 	HAL_ADC_Stop(&hadc1);
-	//HAL_ADC_Stop_DMA(&hadc1); // TODO: Why does this crash execution?
+	HAL_ADC_Stop_DMA(&hadc1);
 	HAL_ADC_Stop_IT(&hadc1);
 	
 	// Disable TIM 2

@@ -82,11 +82,19 @@ void enter_low_power_mode(void);
 void start_peripherals(void);
 void stop_peripherals(void);
 void check_sleep_phase_transition(void);
+void thread_button (void const *argument);
+void thread_display (void const *argument);
+void thread_keypad (void const *argument);
+void thread_check_sleep (void const *argument);
+osThreadDef(thread_button, osPriorityNormal, 1, 0);
+osThreadDef(thread_display, osPriorityNormal, 1, 0);
+osThreadDef(thread_keypad, osPriorityNormal, 1, 0);
+osThreadDef(thread_check_sleep, osPriorityNormal, 1, 0);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
 /**
-  * @brief  Updated the pulse width to obtain the desired output voltage.
+  * @brief  Update the pulse width to obtain the desired output voltage.
   * @retval None
   */
 void pwm_feedback_control(void)
@@ -230,18 +238,11 @@ void check_sleep_phase_transition(void)
 	last_phase = current_phase;
 }
 /* USER CODE END 0 */
-
-void thread_button (void const *argument);
-void thread_display (void const *argument);
-void thread_keypad (void const *argument);
-void thread_check_sleep (void const *argument);
-
-osThreadDef(thread_button, osPriorityNormal, 1, 0);
-osThreadDef(thread_display, osPriorityNormal, 1, 0);
-osThreadDef(thread_keypad, osPriorityNormal, 1, 0);
-osThreadDef(thread_check_sleep, osPriorityNormal, 1, 0);
-
-int start_Thread_main (void)
+/**
+  * @brief  Start all the needed threads.
+  * @retval 0 on success, -1 on failure
+  */
+int start_threads (void)
 {
   if (!osThreadCreate(osThread(thread_button), NULL)) return(-1); 
   if (!osThreadCreate(osThread(thread_display), NULL)) return(-1); 
@@ -250,6 +251,10 @@ int start_Thread_main (void)
   return(0);
 }
 
+/**
+  * @brief  Starts the thread to read the blue button.
+  * @retval None
+  */
 void thread_button(void const *argument)
 {
 	while(1)
@@ -259,6 +264,10 @@ void thread_button(void const *argument)
 	}
 }
 
+/**
+  * @brief  Starts the thread controlling the 7-segment display.
+  * @retval None
+  */
 void thread_display(void const *argument)
 {
 	while(1)
@@ -268,6 +277,10 @@ void thread_display(void const *argument)
 	}
 }
 
+/**
+  * @brief  Starts the thread controlling the keypad.
+  * @retval None
+  */
 void thread_keypad(void const *argument)
 {
 	while(1)
@@ -277,6 +290,10 @@ void thread_keypad(void const *argument)
 	}
 }
 
+/**
+  * @brief  Starts the thread to check for a transition to or from sleep mode.
+  * @retval None
+  */
 void thread_check_sleep(void const *argument)
 {
 	while(1)
@@ -318,7 +335,7 @@ int main (void)
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 	start_peripherals();
-	start_Thread_main();
+	start_threads();
   /* USER CODE END 2 */
 
   /* Infinite loop */

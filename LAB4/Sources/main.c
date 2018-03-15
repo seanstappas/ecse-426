@@ -46,6 +46,10 @@ int adc_counter = 0;
 int pulse_width = 50;
 uint32_t adc_readings[1];
 int last_phase = INPUT_PHASE;
+osThreadId thread_id_button;
+osThreadId thread_id_display;
+osThreadId thread_id_keypad;
+osThreadId thread_id_check_sleep;
 /* USER CODE END PV */
 
 //The thread code is written in Thread_LED.c, just telling the toolchain that the 
@@ -240,15 +244,14 @@ void check_sleep_phase_transition(void)
 /* USER CODE END 0 */
 /**
   * @brief  Start all the needed threads.
-  * @retval 0 on success, -1 on failure
+  * @retval None
   */
-int start_threads (void)
+void start_threads (void)
 {
-  if (!osThreadCreate(osThread(thread_button), NULL)) return(-1); 
-  if (!osThreadCreate(osThread(thread_display), NULL)) return(-1); 
-  if (!osThreadCreate(osThread(thread_keypad), NULL)) return(-1); 
-  if (!osThreadCreate(osThread(thread_check_sleep), NULL)) return(-1); 
-  return(0);
+  thread_id_button = osThreadCreate(osThread(thread_button), NULL); 
+  thread_id_display = osThreadCreate(osThread(thread_display), NULL); 
+  thread_id_keypad = osThreadCreate(osThread(thread_keypad), NULL);
+  thread_id_check_sleep = osThreadCreate(osThread(thread_check_sleep), NULL);
 }
 
 /**
@@ -272,6 +275,10 @@ void thread_display(void const *argument)
 {
 	while(1)
 	{
+		if (current_phase == SLEEP_PHASE)
+		{
+			
+		}
 		osDelay(5);
 		display_current_number();
 	}

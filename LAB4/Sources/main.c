@@ -83,6 +83,7 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 void adc_callback(void);
 void pwm_feedback_control(void);
 void enter_low_power_mode(void);
+void exit_low_power_mode(void);
 void start_peripherals(void);
 void stop_peripherals(void);
 void check_sleep_phase_transition(void);
@@ -90,6 +91,7 @@ void thread_button (void const *argument);
 void thread_display (void const *argument);
 void thread_keypad (void const *argument);
 void thread_check_sleep (void const *argument);
+void restart_suspended_threads(void);
 osThreadDef(thread_button, osPriorityNormal, 1, 0);
 osThreadDef(thread_display, osPriorityNormal, 1, 0);
 osThreadDef(thread_keypad, osPriorityNormal, 1, 0);
@@ -189,6 +191,16 @@ void enter_low_power_mode(void)
 }
 
 /**
+  * @brief  Exit low power mode (not SLEEP phase).
+  * @retval None
+  */
+void exit_low_power_mode(void)
+{
+	start_peripherals();
+	restart_suspended_threads();
+}
+
+/**
   * @brief  Start all peripherals.
   * @retval None
   */
@@ -237,11 +249,10 @@ void check_sleep_phase_transition(void)
 	}
 	else if (current_phase != SLEEP_PHASE && last_phase == SLEEP_PHASE)
 	{
-		start_peripherals();
+		exit_low_power_mode();
 	}
 	last_phase = current_phase;
 }
-/* USER CODE END 0 */
 /**
   * @brief  Start all the needed threads.
   * @retval None
@@ -255,6 +266,16 @@ void start_threads (void)
 }
 
 /**
+  * @brief  Restarts threads waiting in SLEEP mode.
+  * @retval None
+  */
+void restart_suspended_threads(void)
+{
+	osSignalSet(thread_id_button, EXIT_SLEEP_SIGNAL);
+	osSignalSet(thread_id_display, EXIT_SLEEP_SIGNAL);
+}
+
+/**
   * @brief  Starts the thread to read the blue button.
   * @retval None
   */
@@ -262,6 +283,10 @@ void thread_button(void const *argument)
 {
 	while(1)
 	{
+		if (current_phase == SLEEP_PHASE)
+		{
+			osSignalWait(EXIT_SLEEP_SIGNAL, osWaitForever);
+		}
 		osDelay(5);
 		read_button_debounce();
 	}
@@ -277,7 +302,8 @@ void thread_display(void const *argument)
 	{
 		if (current_phase == SLEEP_PHASE)
 		{
-			
+			disable_display();
+			osSignalWait(EXIT_SLEEP_SIGNAL, osWaitForever);
 		}
 		osDelay(5);
 		display_current_number();
@@ -309,6 +335,7 @@ void thread_check_sleep(void const *argument)
 		check_sleep_phase_transition();
 	}
 }
+/* USER CODE END 0 */
 
 /**
   * Main function

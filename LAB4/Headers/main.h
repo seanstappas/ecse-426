@@ -103,6 +103,7 @@
 #define DISPLAY_PHASE 1
 #define SLEEP_PHASE 2
 #define TIM3_PERIOD 8400
+#define EXIT_SLEEP_SIGNAL 0x01
 extern volatile int systick_flag;
 extern volatile float desired_output_voltage;
 extern volatile int current_phase;

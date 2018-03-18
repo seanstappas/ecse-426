@@ -206,6 +206,12 @@ void exit_low_power_mode(void)
   */
 void start_peripherals(void)
 {
+	// Initialize peripherals
+  MX_DMA_Init();
+  MX_ADC1_Init();
+  MX_TIM2_Init();
+  MX_TIM3_Init();
+	
 	// Start ADC
 	HAL_ADC_Start(&hadc1);
 	HAL_ADC_Start_DMA(&hadc1, adc_readings, 1);
@@ -224,16 +230,9 @@ void start_peripherals(void)
   */
 void stop_peripherals(void)
 {
-	// Disable ADC
-	HAL_ADC_Stop(&hadc1);
-	HAL_ADC_Stop_DMA(&hadc1);
-	HAL_ADC_Stop_IT(&hadc1);
-	
-	// Disable TIM 2
-	HAL_TIM_Base_Stop(&htim2);
-	
-	// Disable PWM
-	HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_3);
+	HAL_ADC_DeInit(&hadc1);
+	HAL_TIM_Base_DeInit(&htim2);
+	HAL_TIM_PWM_DeInit(&htim3);
 }
 
 /**
